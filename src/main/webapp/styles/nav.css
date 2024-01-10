@@ -1,0 +1,18 @@
+.navbar{
+    background-color: #a6d0cc;
+}
+.navbar-text {
+    margin-left: 20px;
+    font-size: 25pt;
+}
+.nav-link {
+    margin-left: auto;
+    margin-right: 15%;
+    transition: 0.3s;
+    color: #21807c;
+}
+.nav-link:hover{
+    color: white;
+    font-size: 130%;
+    transition: 0.3s;
+}

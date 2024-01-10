@@ -1,0 +1,32 @@
+body{
+    font-family: 'Lexend', sans-serif;
+}
+::placeholder{
+    font-family: 'Lexend', sans-serif;
+    font-size: 16px;
+}
+.btn-primary{
+    background-color: #32C6C2;
+    border: 1px solid #32C6C2;
+}
+.btn-primary:hover{
+    background-color: #21807c;
+    border: 1px solid #21807c;
+}
+.btn-primary:active{
+    background-color: #21807c !important;
+    border: 1px solid #21807c !important;
+}
+
+.form-control:focus{
+    border-color: #32C6C2;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px #32C6C2;
+}
+
+#error{
+    color: #a42138;
+}
+
+a{
+    color: #21807c;
+}
