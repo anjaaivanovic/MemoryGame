@@ -2,6 +2,11 @@
 <%@ page import="com.example.projekat.Database" %>
 <%@ page import="entities.UserEntity" %>
 <%@ page import="java.util.List" %>
+<%@ page import="rmi.ILeaderboardRMI" %>
+<%@ page import="java.rmi.Naming" %>
+<%@ page import="java.net.MalformedURLException" %>
+<%@ page import="java.rmi.RemoteException" %>
+<%@ page import="java.rmi.NotBoundException" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
@@ -13,33 +18,21 @@
     String rank = "-";
     if (user.getRank() != null) rank = user.getRank();
 
-    sql = "select * from users where roleId <> 2 order by (CAST(gamesPlayed AS DECIMAL(10, 2)) / NULLIF(CAST(gamesWon AS DECIMAL(10, 2)), 0)) limit 10";
-    List<UserEntity> leaderboard = em.createNativeQuery(sql, UserEntity.class).getResultList();
-    String leaderboardStr = "<h1>Leaderboard</h1>" +
-            "<table class='table'>" +
-            "<thead class='thead-dark'>" +
-            "<tr>" +
-            "<th scope='col'>Place</th>" +
-            "<th scope='col'>Username</th>" +
-            "<th scope='col'>Rank</th>" +
-            "<th scope='col'>Stats</th>" +
-            "</tr></thead>" +
-            "<tbody>";
+    ILeaderboardRMI rmi;
+    String leaderboard = "";
 
-    int i = 1;
-    for (UserEntity u: leaderboard){
-        String urank = "-";
-        if (u.getRank() != null) rank = u.getRank();
-        leaderboardStr += "<tr>" +
-                "<td>"+ i + ".</td>" +
-                "<td>"+ u.getUsername() + "</td>" +
-                "<td>"+ urank + "</td>" +
-                "<td>"+ u.getGamesWon()+ " / " + u.getGamesPlayed() + "</td>" +
-                "</tr>";
-        i++;
+    try {
+        rmi = (ILeaderboardRMI) Naming.lookup("rmi://localhost:1111/LeaderboardRMI");
+        leaderboard = rmi.getLeaderboard();
+        System.out.println(rmi);
+        System.out.println(leaderboard);
+    } catch (MalformedURLException e1) {
+        e1.printStackTrace();
+    } catch (RemoteException e1) {
+        e1.printStackTrace();
+    } catch (NotBoundException e1) {
+        e1.printStackTrace();
     }
-
-    leaderboardStr += "</tbody></table>";
 %>
 <html>
 <head>
@@ -96,7 +89,7 @@
                 </div>
             </div>
             <div class="col-8" id="leaderboard">
-                <%=leaderboardStr%>
+                <%=leaderboard%>
             </div>
         </div>
     </div>

@@ -1,4 +1,4 @@
-package com.example.projekat.Servlets;
+package com.example.projekat.servlets;
 
 import java.io.*;
 

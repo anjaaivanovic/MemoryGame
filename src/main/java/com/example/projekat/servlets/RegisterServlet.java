@@ -1,4 +1,4 @@
-package com.example.projekat.Servlets;
+package com.example.projekat.servlets;
 
 import com.example.projekat.Database;
 import entities.UserEntity;
