@@ -1,7 +1,18 @@
+<%@ page import="io.socket.client.Socket" %>
+<%@ page import="io.socket.client.IO" %>
+<%@ page import="java.net.URISyntaxException" %>
+<%@ page import="client.ClientSocket" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
     if (session.getAttribute("id") == null) response.sendRedirect("index.jsp");
+    try {
+        ClientSocket socket = new ClientSocket();
+        socket.connect();
+    } catch (URISyntaxException e) {
+        e.printStackTrace();
+    }
+
 %>
 
 <!doctype html>
