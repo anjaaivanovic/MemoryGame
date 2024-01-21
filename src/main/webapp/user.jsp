@@ -1,18 +1,7 @@
-<%@ page import="io.socket.client.Socket" %>
-<%@ page import="io.socket.client.IO" %>
-<%@ page import="java.net.URISyntaxException" %>
-<%@ page import="client.ClientSocket" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
     if (session.getAttribute("id") == null) response.sendRedirect("index.jsp");
-    try {
-        ClientSocket socket = new ClientSocket();
-        socket.connect();
-    } catch (URISyntaxException e) {
-        e.printStackTrace();
-    }
-
 %>
 
 <!doctype html>
@@ -25,7 +14,7 @@
     <link href="styles/forms.css" rel="stylesheet">
     <link href="styles/nav.css" rel="stylesheet">
 </head>
-<body>
+<body onload="connect();">
 <!-- Logout Modal -->
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -69,13 +58,16 @@
             To find an opponent and start a game, please join the queue.
         </p>
         <br>
-        <a href="#" class="btn btn-primary" id="join">Join queue</a>
+        <button onclick="join()" class="btn btn-primary" id="join">Join queue</button>
+        <div id="msg"><span id="status"></span><span id="countdown"></span></div>
     </div>
 </div>
 </section>
 <div id="manual">
     <jsp:include page="manual.html"/>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+<script src="js/client.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 </body>
 <style>

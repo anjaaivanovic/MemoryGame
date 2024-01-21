@@ -10,7 +10,7 @@ public class RMIServer {
         try {
             LeaderboardRMI leaderboard = new LeaderboardRMI();
             LocateRegistry.createRegistry(1111);
-            System.out.println("//localhost:1111/LeaderboardRMI");
+            System.out.println("RMI Server started on //localhost:1111/LeaderboardRMI");
             Naming.rebind("//localhost:1111/LeaderboardRMI", leaderboard);
         } catch (RemoteException e) {
             e.printStackTrace();
