@@ -1,7 +1,6 @@
 <%@ page import="jakarta.persistence.EntityManager" %>
 <%@ page import="com.example.projekat.Database" %>
 <%@ page import="entities.UserEntity" %>
-<%@ page import="java.util.List" %>
 <%@ page import="rmi.ILeaderboardRMI" %>
 <%@ page import="java.rmi.Naming" %>
 <%@ page import="java.net.MalformedURLException" %>
@@ -10,28 +9,30 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
+    String username = "", leaderboard = "", rank = "";
+    int gamesPlayed = 0, gamesWon = 0;
+
     if (session.getAttribute("id") == null) response.sendRedirect("index.jsp");
+    else{
+        EntityManager em = Database.getConnection();
+        String sql = "select * from users where id=" + session.getAttribute("id");
+        UserEntity user = (UserEntity)em.createNativeQuery(sql, UserEntity.class).getResultList().get(0);
 
-    EntityManager em = Database.getConnection();
-    String sql = "select * from users where id=" + session.getAttribute("id");
-    UserEntity user = (UserEntity)em.createNativeQuery(sql, UserEntity.class).getResultList().get(0);
-    String rank = "-";
-    if (user.getRank() != null) rank = user.getRank();
+        username = user.getUsername();
+        if (user.getRank() != null) rank = user.getRank(); else rank = "-";
+        gamesPlayed = user.getGamesPlayed();
+        gamesWon = user.getGamesWon();
 
-    ILeaderboardRMI rmi;
-    String leaderboard = "";
+        ILeaderboardRMI rmi;
 
-    try {
-        rmi = (ILeaderboardRMI) Naming.lookup("rmi://localhost:1111/LeaderboardRMI");
-        leaderboard = rmi.getLeaderboard();
-        System.out.println(rmi);
-        System.out.println(leaderboard);
-    } catch (MalformedURLException e1) {
-        e1.printStackTrace();
-    } catch (RemoteException e1) {
-        e1.printStackTrace();
-    } catch (NotBoundException e1) {
-        e1.printStackTrace();
+        try {
+            rmi = (ILeaderboardRMI) Naming.lookup("rmi://localhost:1111/LeaderboardRMI");
+            leaderboard = rmi.getLeaderboard();
+            System.out.println(rmi);
+            System.out.println(leaderboard);
+        } catch (MalformedURLException | RemoteException | NotBoundException e1) {
+            e1.printStackTrace();
+        }
     }
 %>
 <html>
@@ -83,9 +84,9 @@
                     <img src="images/RANK.png" alt="rank" style="width: 60%; padding-right: 8%">
                     <img src="images/<%=rank%>.png" alt="Rank" style="width: 30%">
                 </div>
-                <h1>Username: <%=user.getUsername()%></h1>
+                <h1>Username: <%=username%></h1>
                 <div class="card w-50">
-                    <div class="card-body">Played / Won<br><%=user.getGamesPlayed()%> / <%=user.getGamesWon()%></div>
+                    <div class="card-body">Played / Won<br><%=gamesPlayed%> / <%=gamesWon%></div>
                 </div>
             </div>
             <div class="col-8" id="leaderboard">

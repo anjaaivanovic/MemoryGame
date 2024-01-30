@@ -14,7 +14,7 @@
     <link href="styles/forms.css" rel="stylesheet">
     <link href="styles/nav.css" rel="stylesheet">
 </head>
-<body onload="connect();">
+<body onload="setup()">
 <!-- Logout Modal -->
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">

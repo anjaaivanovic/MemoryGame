@@ -1,10 +1,15 @@
 package engine;
 
+import com.google.gson.Gson;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.UUID;
 
-public class GameLogic {
+public class GameEngine implements Serializable {
 
+    private UUID id;
     private int rows = 5;
     private int columns = 6;
     private Card[][] board;
@@ -16,12 +21,16 @@ public class GameLogic {
     private Card first;
     private Card second;
 
+    public GameEngine(UUID id) {
+        this.id = id;
+    }
+
     public void GenerateBoard(){
         board = new Card[rows][columns];
         Random rand = new Random();
         ArrayList<Integer> list = new ArrayList<>();
 
-        for (int i = 0; i < rows * columns / 2; i++){
+        for (int i = 1; i <= rows * columns / 2; i++){
             list.add(i);
             list.add(i);
         }
@@ -70,5 +79,15 @@ public class GameLogic {
             return true;
         }
         return false;
+    }
+
+    public Card[][] getBoard() {
+        return board;
+    }
+
+    public String getBoardAsJSONString()
+    {
+        Gson gson = new Gson();
+        return gson.toJson(board);
     }
 }

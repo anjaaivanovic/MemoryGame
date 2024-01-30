@@ -1,6 +1,8 @@
 package engine;
 
-public class Card {
+import java.io.Serializable;
+
+public class Card implements Serializable {
     int value;
     boolean visible;
 
