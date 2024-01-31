@@ -14,15 +14,20 @@ public class GameEngine implements Serializable {
     private int columns = 6;
     private Card[][] board;
 
-    private int player = 1;
+    private Integer player1;
+    private Integer player2;
+    private Integer turn;
     private int score1 = 0;
     private int score2 = 0;
 
     private Card first;
     private Card second;
 
-    public GameEngine(UUID id) {
+    public GameEngine(UUID id, Integer player1, Integer player2) {
         this.id = id;
+        this.player1 = player1;
+        this.player2 = player2;
+        this.turn = player1;
     }
 
     public void GenerateBoard(){
@@ -58,9 +63,11 @@ public class GameEngine implements Serializable {
                 if (first.value != second.value){
                     first.visible = false;
                     second.visible = false;
+
+                    turn = turn == player1 ? player2 : player1;
                 }
                 else{
-                    if (player == 1) score1++;
+                    if (turn == player1) score1++;
                     else score2++;
                 }
 
@@ -72,8 +79,8 @@ public class GameEngine implements Serializable {
             }
             else{
                 second = board[x][y];
-                if (player == 1 && score1 == 14) score1 = 15;
-                else if (player == 2 && score2 == 14) score2 = 15;
+                if (turn == player1 && score1 == 14) score1 = 15;
+                else if (turn == player2 && score2 == 14) score2 = 15;
             }
 
             return true;
@@ -81,13 +88,13 @@ public class GameEngine implements Serializable {
         return false;
     }
 
-    public Card[][] getBoard() {
-        return board;
-    }
-
     public String getBoardAsJSONString()
     {
         Gson gson = new Gson();
         return gson.toJson(board);
+    }
+
+    public Integer getTurn() {
+        return turn;
     }
 }

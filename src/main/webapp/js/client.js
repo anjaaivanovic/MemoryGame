@@ -1,32 +1,60 @@
 let socket;
-
+let userId;
 function setEvents()
 {
     socket.on('connect', () => onConnect());
     socket.on('disconnect', () => onDisconnect());
     socket.on('queueStatus', (data) => status(data));
     socket.on('startGame', (data) => startGame(data));
-    socket.on("receiveBoard", (board) => updateBoard(board));
+    socket.on("receiveBoard", (board, turn) => updateBoard(board, turn));
+}
+
+function getSessionData() {
+    return fetch('/memoryGame/getSessionData')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Session data:', data);
+            if (data.id) {
+                return data.id
+            } else {
+                console.error("Id not found in session!")
+                return null;
+            }
+        })
+        .catch(error => {
+            console.error('Error retrieving session data: ', error);
+            return null
+        });
 }
 
 function onConnect() {
     sessionStorage.setItem('socketId', socket.id);
-    console.log('Connection established!');
 }
 function onDisconnect() { console.log('Connection ended!'); }
 
-function setup()
-{
-    if(sessionStorage.getItem("socketId") === undefined)
-    {
+async function setup() {
+    if (!sessionStorage.getItem("socketId")) {
         socket = io('http://localhost:5678');
         socket.connect();
+
+        try {
+            const id = await getSessionData();
+            if (id !== null) {
+                userId = id;
+                sessionStorage.setItem("id", userId);
+                console.log("Retrieved userId:", userId);
+                socket.emit("saveId", id);
+            } else {
+                console.log('Id not found in session.');
+            }
+        } catch (error) {
+            console.log('Error in setup:', error);
+        }
+
         console.log("First connection");
-    }
-    else
-    {
+    } else {
         let socketId = sessionStorage.getItem("socketId");
-        socket = io('http://localhost:5678', { query: { socketId } });
+        socket = io('http://localhost:5678', {query: {socketId: socketId}});
         socket.connect();
         console.log("Connection reestablished");
     }
@@ -40,7 +68,7 @@ function join(){
     let joinButton = document.getElementById("join");
     console.log("Button state before: ", joinButton.disabled);
 
-    socket.emit("joinQueue");
+    socket.emit("joinQueue",userId);
     if (joinButton) {
         joinButton.disabled = true;
         console.log("Sent join req!");
@@ -54,8 +82,8 @@ function status(status){ document.getElementById("status").innerHTML = status; }
 //start game
 function startGame(gameId){
     console.log(gameId);
-    window.location.assign("http://localhost:8081/memoryGame/game.jsp?gameId="+gameId);
     sessionStorage.setItem("gameId", gameId);
+    window.location.assign("http://localhost:8081/memoryGame/game.jsp?gameId="+gameId);
     //startCountdown(gameId);
 }
 function startCountdown() {
@@ -77,37 +105,30 @@ function startCountdown() {
 function getBoard() {
     setup();
     let gameId = sessionStorage.getItem('gameId');
-    socket.emit("getBoard", gameId);
+    let id = sessionStorage.getItem("id")
+    socket.emit("getBoard", [gameId, id]);
 }
 
-function updateBoard(board)
+function updateBoard(board, turn)
 {
-    console.log(board)
     let matrix = JSON.parse(board)
-
-    for (let i = 0; i < matrix.length; i++) {
-        for (let j = 0; j < matrix[i].length; j++) {
-            console.log(matrix[i][j].value);
-        }
-    }
-
+    console.log(turn)
+    console.log(sessionStorage.getItem("socketId"))
     let gameBoardElement = document.getElementById("gameBoard");
-
     let gameBoard = ""
 
     for (let i = 0; i < 5; i++){
         gameBoard += `<div class="row align-items-center">`;
         for (let j = 0; j < 6; j++){
-            let value;
-            if (matrix[i][j].visible){
-                value = matrix[i][j].value
-            }
-            else{
-                value = "closed"
-            }
-            gameBoard += `<div class="col"><a href="#" class="d-block mb-4 h-100">
-                        <img class="img-fluid img-thumbnail" src="images/` + value + `.png" alt="">
-                        </a>
+            let value = "closed";
+            if (matrix[i][j].visible){ value = matrix[i][j].value }
+
+            let cursor = "style='cursor:pointer'";
+            if (!turn) { cursor = "style='cursor:default'" }
+
+            gameBoard += `<div class="col"><div class="d-block mb-4 h-100"` + cursor + `>
+                        <img class="img-fluid img-thumbnail" src="images/` + value + `.png" alt="Playing card">
+                        </div>
                     </div>`;
         }
         gameBoard += "</div>";

@@ -9,17 +9,18 @@ import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
 import engine.GameEngine;
-import java.util.HashMap;
-import java.util.Queue;
-import java.util.UUID;
+import entities.UserEntity;
+
+import java.io.Console;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static java.lang.Thread.sleep;
 
 public class ServerSocket {
     private static Configuration config;
     private static SocketIOServer server;
     private static ServerSocket myServer;
+    private HashMap<Integer, ClientData> activePlayers = new HashMap<>();
     private Queue<ClientData> playerQueue = new ConcurrentLinkedQueue<>();
     private static HashMap<UUID, GameEngine> activeGames = new HashMap<>();
 
@@ -36,6 +37,7 @@ public class ServerSocket {
         setDisconnectListener();
         setQueueListener();
         setGetBoardListener();
+        setSaveIdListener();
         server.start();
         System.out.println("Server started on http://localhost:5678");
     }
@@ -60,6 +62,24 @@ public class ServerSocket {
         });
     }
 
+    private void setSaveIdListener(){
+        server.addEventListener("saveId", Integer.class, new DataListener<Integer>() {
+
+            @Override
+            public void onData(SocketIOClient socketIOClient, Integer userId, AckRequest ackRequest) throws Exception {
+                setId(socketIOClient, userId);
+            }
+        });
+    }
+
+    private void setId(SocketIOClient socket, int userId){
+        UserEntity u = new UserEntity();
+        u.setId(userId);
+        ClientData clientData = new ClientData(socket, u);
+        activePlayers.put(userId, clientData);
+        System.out.println("saved id " + userId);
+    }
+
     private void setDisconnectListener(){
         server.addDisconnectListener(new DisconnectListener() {
             @Override
@@ -70,25 +90,30 @@ public class ServerSocket {
     }
 
     private void setQueueListener(){
-        server.addEventListener("joinQueue", UUID.class, new DataListener<UUID>() {
+        server.addEventListener("joinQueue", Integer.class, new DataListener<Integer>() {
             @Override
-            public void onData(SocketIOClient socketIOClient, UUID uuid, AckRequest ackRequest) throws Exception {
-                joinQueue(socketIOClient);
+            public void onData(SocketIOClient socketIOClient, Integer userId, AckRequest ackRequest) throws Exception {
+                joinQueue(socketIOClient, userId);
             }
         });
     }
 
-    private void joinQueue(SocketIOClient client) {
-        playerQueue.add(new ClientData(client));
+    private void joinQueue(SocketIOClient client, Integer userId) {
+        ClientData clientData = activePlayers.get(userId);
+        //reset the socketId
+        clientData.setSocket(client);
+        activePlayers.put(userId, clientData);
+
+        playerQueue.add(clientData);
         client.sendEvent("queueStatus", "You joined the queue. Waiting for an opponent...");
         tryMatchPlayers();
     }
+
 
     private void tryMatchPlayers() {
         if (playerQueue.size() >= 2) {
             ClientData player1 = playerQueue.poll();
             ClientData player2 = playerQueue.poll();
-
             startGame(player1, player2);
         }
     }
@@ -100,26 +125,27 @@ public class ServerSocket {
 
         System.out.println("Game " + gameId + " starting between players: " + player1.getSocket().getSessionId()  + " and " + player2.getSocket().getSessionId());
 
-        GameEngine engine = new GameEngine(gameId);
+        GameEngine engine = new GameEngine(gameId, player1.getUserData().getId(), player2.getUserData().getId());
         engine.GenerateBoard();
         activeGames.put(gameId, engine);
     }
 
     private void setGetBoardListener(){
-        server.addEventListener("getBoard", UUID.class, new DataListener<UUID>() {
+        server.addEventListener("getBoard",  Object[].class, new DataListener<Object[]>() {
             @Override
-            public void onData(SocketIOClient socketIOClient, UUID gameId, AckRequest ackRequest) throws Exception {
-                sendBoard(socketIOClient, gameId);
+            public void onData(SocketIOClient socketIOClient,  Object[] data, AckRequest ackRequest) throws Exception {
+                UUID gameId = UUID.fromString((String) data[0]);
+                Integer userId = Integer.parseInt((String)data[1]);
+                sendBoard(socketIOClient, gameId, userId);
             }
         });
     }
 
-    private void sendBoard(SocketIOClient client, UUID gameId){
+    private void sendBoard(SocketIOClient client, UUID gameId, Integer userId){
         GameEngine engine = activeGames.get(gameId);
         String boardJson = engine.getBoardAsJSONString();
-
-        System.out.println("Sending setup info for game " + gameId + " to " + client.getSessionId() + " ...");
-        client.sendEvent("receiveBoard", boardJson);
-        System.out.println("Setup info sent!");
+        boolean turn = Objects.equals(engine.getTurn(), userId);
+        System.out.println("Sending board to " + userId);
+        client.sendEvent("receiveBoard", boardJson, turn);
     }
 }
