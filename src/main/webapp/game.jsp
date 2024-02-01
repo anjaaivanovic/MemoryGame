@@ -9,18 +9,38 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Lexend&display=swap" rel="stylesheet">
     <link href="styles/forms.css" rel="stylesheet">
+    <link href="styles/nav.css" rel="stylesheet">
 </head>
 <body onload="getBoard()">
-<div id="countdown" hidden></div>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-9" id="gameBoard">
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <span class="navbar-text mr-4">Memory Game</span>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="home">
+            <a class="nav-link ml-auto"  href="user.jsp">Home page</a>
+        </div>
+        <div class="collapse navbar-collapse" id="stats">
+            <a class="nav-link ml-auto"  href="stats.jsp">Statistics</a>
+        </div>
+        <div class="collapse navbar-collapse" id="logout">
+            <a class="nav-link ml-auto" data-bs-toggle="modal" data-bs-target="#logoutModal" style="cursor: pointer">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-9">
+                    <span id="score">0</span><span> : </span><span id="otherScore">0</span>
+                    <div id="gameBoard">
 
-            </div>
-            <div class="col-3">
-                <!-- Content for the 3:9 section -->
-                <h2>3:9 Section</h2>
-                <p>This is the sidebar content for the 3:9 section.</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <h2>Chat</h2>
+                    <div id="chat" class="overflow-auto"></div>
+                    <input type="text" placeholder="Write message..." id="chatInput"><button onclick="sendMessage()">Send</button>
+                </div>
             </div>
         </div>
     </div>

@@ -38,6 +38,8 @@ public class ServerSocket {
         setQueueListener();
         setGetBoardListener();
         setSaveIdListener();
+        setPlayMoveListener();
+        setSendMessageListener();
         server.start();
         System.out.println("Server started on http://localhost:5678");
     }
@@ -142,10 +144,73 @@ public class ServerSocket {
     }
 
     private void sendBoard(SocketIOClient client, UUID gameId, Integer userId){
+        //reset the socketId
+        ClientData clientData = activePlayers.get(userId);
+        clientData.setSocket(client);
+        activePlayers.put(userId, clientData);
+
         GameEngine engine = activeGames.get(gameId);
         String boardJson = engine.getBoardAsJSONString();
         boolean turn = Objects.equals(engine.getTurn(), userId);
-        System.out.println("Sending board to " + userId);
-        client.sendEvent("receiveBoard", boardJson, turn);
+        int myScore = engine.getScore(userId);
+        int opponentScore = engine.getOtherScore(userId);
+
+        client.sendEvent("receiveBoard", boardJson, turn, myScore, opponentScore);
+    }
+
+    private void setPlayMoveListener(){
+        server.addEventListener("playMove",  Object[].class, new DataListener<Object[]>() {
+
+            @Override
+            public void onData(SocketIOClient socketIOClient, Object[] data, AckRequest ackRequest) throws Exception {
+                System.out.println("play move event received!");
+                UUID gameId = UUID.fromString((String) data[0]);
+                Integer userId = Integer.parseInt((String)data[1]);
+                int x = (Integer) data[2];
+                int y = (Integer) data[3];
+                playMove(socketIOClient, gameId, userId, x, y);
+            }
+        });
+    }
+
+    private void playMove(SocketIOClient client, UUID gameId, Integer userId, int x, int y)
+    {
+        //reset the socketId
+        ClientData clientData = activePlayers.get(userId);
+        clientData.setSocket(client);
+        activePlayers.put(userId, clientData);
+
+        System.out.println("getting engine...");
+        GameEngine engine = activeGames.get(gameId);
+        System.out.println("playing move...");
+        engine.playMove(x, y, userId);
+        System.out.println("played move");
+
+        String boardJson = engine.getBoardAsJSONString();
+        boolean turn = Objects.equals(engine.getTurn(), userId);
+        int myScore = engine.getScore(userId);
+        int opponentScore = engine.getOtherScore(userId);
+        client.sendEvent("receiveBoard", boardJson, turn, myScore, opponentScore);
+    }
+
+    private void setSendMessageListener(){
+        server.addEventListener("sendMessage",  Object[].class, new DataListener<Object[]>() {
+
+            @Override
+            public void onData(SocketIOClient socketIOClient, Object[] data, AckRequest ackRequest) throws Exception {
+                UUID gameId = UUID.fromString((String) data[0]);
+                String msg = (String)data[1];
+                sendMessage(gameId, msg);
+            }
+        });
+    }
+
+    private void sendMessage(UUID gameId, String msg)
+    {
+        GameEngine engine = activeGames.get(gameId);
+        SocketIOClient socket1 = activePlayers.get(engine.getPlayer1()).getSocket();
+        SocketIOClient socket2 = activePlayers.get(engine.getPlayer2()).getSocket();
+        socket1.sendEvent("appendMessage", msg);
+        socket2.sendEvent("appendMessage", msg);
     }
 }

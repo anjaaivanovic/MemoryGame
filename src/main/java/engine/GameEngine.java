@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 
@@ -55,20 +56,22 @@ public class GameEngine implements Serializable {
         }
         return 0;
     }
-    public boolean playMove(int x, int y){
-        if (board[x][y].visible){
+    public boolean playMove(int x, int y, Integer id){
+        if (!Objects.equals(id, turn)) return false;
+
+        if (!board[x][y].visible){
             board[x][y].visible = true;
 
             if (first != null && second != null){
                 if (first.value != second.value){
                     first.visible = false;
                     second.visible = false;
-
-                    turn = turn == player1 ? player2 : player1;
                 }
                 else{
                     if (turn == player1) score1++;
                     else score2++;
+
+                    turn = turn == player1 ? player2 : player1;
                 }
 
                 first = board[x][y];
@@ -96,5 +99,21 @@ public class GameEngine implements Serializable {
 
     public Integer getTurn() {
         return turn;
+    }
+
+    public int getScore(Integer userId){
+        return userId == score1 ? score1 : score2;
+    }
+
+    public int getOtherScore(Integer userId){
+        return userId != score1 ? score1 : score2;
+    }
+
+    public Integer getPlayer1() {
+        return player1;
+    }
+
+    public Integer getPlayer2() {
+        return player2;
     }
 }

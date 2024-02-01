@@ -6,7 +6,8 @@ function setEvents()
     socket.on('disconnect', () => onDisconnect());
     socket.on('queueStatus', (data) => status(data));
     socket.on('startGame', (data) => startGame(data));
-    socket.on("receiveBoard", (board, turn) => updateBoard(board, turn));
+    socket.on("receiveBoard", (board, turn, score, otherScore) => updateBoard(board, turn, score, otherScore));
+    socket.on("appendMessage", (msg) => appendMessage(msg));
 }
 
 function getSessionData() {
@@ -14,10 +15,10 @@ function getSessionData() {
         .then(response => response.json())
         .then(data => {
             console.log('Session data:', data);
-            if (data.id) {
-                return data.id
+            if (data) {
+                return data
             } else {
-                console.error("Id not found in session!")
+                console.error("Data not found in session!")
                 return null;
             }
         })
@@ -38,7 +39,10 @@ async function setup() {
         socket.connect();
 
         try {
-            const id = await getSessionData();
+            const data = await getSessionData();
+            console.log(data)
+            let id = data.id
+            let username = data.username
             if (id !== null) {
                 userId = id;
                 sessionStorage.setItem("id", userId);
@@ -46,6 +50,12 @@ async function setup() {
                 socket.emit("saveId", id);
             } else {
                 console.log('Id not found in session.');
+            }
+            if (username !== null) {
+                sessionStorage.setItem("username", username);
+                console.log("Retrieved username:", username);
+            } else {
+                console.log('Username not found in session.');
             }
         } catch (error) {
             console.log('Error in setup:', error);
@@ -105,16 +115,20 @@ function startCountdown() {
 function getBoard() {
     setup();
     let gameId = sessionStorage.getItem('gameId');
-    let id = sessionStorage.getItem("id")
+    let id = sessionStorage.getItem("id");
     socket.emit("getBoard", [gameId, id]);
 }
 
-function updateBoard(board, turn)
+function updateBoard(board, turn, score, otherScore)
 {
     let matrix = JSON.parse(board)
-    console.log(turn)
+    console.log(matrix)
+    console.log(score)
+    console.log(otherScore)
     console.log(sessionStorage.getItem("socketId"))
     let gameBoardElement = document.getElementById("gameBoard");
+    document.getElementById("score").innerHTML = score;
+    document.getElementById("otherScore").innerHTML = otherScore;
     let gameBoard = ""
 
     for (let i = 0; i < 5; i++){
@@ -124,10 +138,13 @@ function updateBoard(board, turn)
             if (matrix[i][j].visible){ value = matrix[i][j].value }
 
             let cursor = "style='cursor:pointer'";
-            if (!turn) { cursor = "style='cursor:default'" }
-
+            let onclick = `onclick="playMove(` + i + `,` + j + `)"`
+            if (!turn) {
+                cursor = "style='cursor:default'";
+                onclick = onclick="";
+            }
             gameBoard += `<div class="col"><div class="d-block mb-4 h-100"` + cursor + `>
-                        <img class="img-fluid img-thumbnail" src="images/` + value + `.png" alt="Playing card">
+                        <img class="img-fluid img-thumbnail" src="images/` + value + `.png" alt="Playing card" ` + onclick + `>
                         </div>
                     </div>`;
         }
@@ -135,4 +152,29 @@ function updateBoard(board, turn)
     }
 
     gameBoardElement.innerHTML = gameBoard
+}
+
+function playMove(x, y){
+    console.log("played move for " + x + ", " + y);
+    let gameId = sessionStorage.getItem('gameId');
+    let id = sessionStorage.getItem("id")
+    socket.emit("playMove", [gameId, id, x, y]);
+}
+
+function sendMessage(){
+    let input = document.getElementById("chatInput");
+    let text = sessionStorage.getItem("username") + ": " + input.value;
+    input.value = "";
+    let gameId = sessionStorage.getItem("gameId");
+    socket.emit("sendMessage", [gameId, text])
+    console.log("Message sent!");
+}
+
+function appendMessage(msg){
+    console.log(msg)
+    let container = document.getElementById("chat");
+    let msgDiv = document.createElement("div");
+    msgDiv.innerText = msg;
+    container.append(msgDiv);
+    console.log("Message appended!");
 }

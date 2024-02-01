@@ -20,7 +20,8 @@ public class SessionDataServlet extends HttpServlet {
 
         if (session != null) {
             Integer id = (Integer) session.getAttribute("id");
-            jsonResponse = "{ \"id\": \"" + id + "\" }";
+            String username = (String) session.getAttribute("username");
+            jsonResponse = "{ \"id\": \"" + id + "\", \"username\": \"" +  username + "\" }";
         } else {
             jsonResponse = "{ \"error\": \"No active session\" }";
         }
