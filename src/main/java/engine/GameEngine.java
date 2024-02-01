@@ -49,46 +49,42 @@ public class GameEngine implements Serializable {
         }
     }
 
-    public int checkWinner(){
+    public Integer checkWinner(){
         if (score1 + score2 == 15){
-            if (score1 > score2) return 1;
-            return 2;
+            if (score1 > score2) return player1;
+            return player2;
         }
         return 0;
     }
+    Integer lastScored;
+
     public boolean playMove(int x, int y, Integer id){
         if (!Objects.equals(id, turn)) return false;
+        if (board[x][y].visible) return false;
 
-        if (!board[x][y].visible){
-            board[x][y].visible = true;
-
-            if (first != null && second != null){
-                if (first.value != second.value){
+        if (first != null && second != null) {
+            if (first.value != second.value) {
                     first.visible = false;
                     second.visible = false;
-                }
-                else{
-                    if (turn == player1) score1++;
-                    else score2++;
-
-                    turn = turn == player1 ? player2 : player1;
-                }
-
-                first = board[x][y];
-                second = null;
             }
-            else if (first == null){
-                first = board[x][y];
-            }
-            else{
-                second = board[x][y];
-                if (turn == player1 && score1 == 14) score1 = 15;
-                else if (turn == player2 && score2 == 14) score2 = 15;
-            }
-
-            return true;
+            first = second = null;
         }
-        return false;
+
+        board[x][y].visible = true;
+
+        if (first == null) first = board[x][y];
+        else if (second == null)
+        {
+            second = board[x][y];
+            if (first.value != second.value) turn = turn == player1 ? player2 : player1;
+            else {
+                if (turn == player1) score1++;
+                else score2++;
+                lastScored = id;
+            }
+        }
+
+        return true;
     }
 
     public String getBoardAsJSONString()
@@ -101,19 +97,19 @@ public class GameEngine implements Serializable {
         return turn;
     }
 
-    public int getScore(Integer userId){
-        return userId == score1 ? score1 : score2;
-    }
-
-    public int getOtherScore(Integer userId){
-        return userId != score1 ? score1 : score2;
-    }
-
     public Integer getPlayer1() {
         return player1;
     }
 
     public Integer getPlayer2() {
         return player2;
+    }
+
+    public int getScore1() {
+        return score1;
+    }
+
+    public int getScore2() {
+        return score2;
     }
 }

@@ -151,11 +151,16 @@ public class ServerSocket {
 
         GameEngine engine = activeGames.get(gameId);
         String boardJson = engine.getBoardAsJSONString();
-        boolean turn = Objects.equals(engine.getTurn(), userId);
-        int myScore = engine.getScore(userId);
-        int opponentScore = engine.getOtherScore(userId);
+        Integer turn = engine.getTurn();
+        int score1 = engine.getScore1();
+        int score2 = engine.getScore2();
+        Integer win = engine.checkWinner();
 
-        client.sendEvent("receiveBoard", boardJson, turn, myScore, opponentScore);
+        SocketIOClient socket1 = activePlayers.get(engine.getPlayer1()).getSocket();
+        SocketIOClient socket2 = activePlayers.get(engine.getPlayer2()).getSocket();
+        socket1.sendEvent("receiveBoard", boardJson, turn, score1, score2, win);
+        socket2.sendEvent("receiveBoard", boardJson, turn, score1, score2, win);
+
     }
 
     private void setPlayMoveListener(){
@@ -180,17 +185,10 @@ public class ServerSocket {
         clientData.setSocket(client);
         activePlayers.put(userId, clientData);
 
-        System.out.println("getting engine...");
         GameEngine engine = activeGames.get(gameId);
-        System.out.println("playing move...");
         engine.playMove(x, y, userId);
-        System.out.println("played move");
 
-        String boardJson = engine.getBoardAsJSONString();
-        boolean turn = Objects.equals(engine.getTurn(), userId);
-        int myScore = engine.getScore(userId);
-        int opponentScore = engine.getOtherScore(userId);
-        client.sendEvent("receiveBoard", boardJson, turn, myScore, opponentScore);
+        sendBoard(client, gameId, userId);
     }
 
     private void setSendMessageListener(){

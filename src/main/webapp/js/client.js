@@ -6,7 +6,7 @@ function setEvents()
     socket.on('disconnect', () => onDisconnect());
     socket.on('queueStatus', (data) => status(data));
     socket.on('startGame', (data) => startGame(data));
-    socket.on("receiveBoard", (board, turn, score, otherScore) => updateBoard(board, turn, score, otherScore));
+    socket.on("receiveBoard", (board, turn, score, otherScore, win) => updateBoard(board, turn, score, otherScore, win));
     socket.on("appendMessage", (msg) => appendMessage(msg));
 }
 
@@ -119,7 +119,7 @@ function getBoard() {
     socket.emit("getBoard", [gameId, id]);
 }
 
-function updateBoard(board, turn, score, otherScore)
+function updateBoard(board, turn, score, otherScore, win)
 {
     let matrix = JSON.parse(board)
     console.log(matrix)
@@ -139,7 +139,7 @@ function updateBoard(board, turn, score, otherScore)
 
             let cursor = "style='cursor:pointer'";
             let onclick = `onclick="playMove(` + i + `,` + j + `)"`
-            if (!turn) {
+            if (turn != sessionStorage.getItem("id")) {
                 cursor = "style='cursor:default'";
                 onclick = onclick="";
             }
@@ -151,6 +151,17 @@ function updateBoard(board, turn, score, otherScore)
         gameBoard += "</div>";
     }
 
+    if (win != 0)
+    {
+        if (win == sessionStorage.getItem("id"))
+        {
+            alert("Congratulations! You won.");
+        }
+        else
+        {
+            alert("Oh no! You lost.");
+        }
+    }
     gameBoardElement.innerHTML = gameBoard
 }
 
