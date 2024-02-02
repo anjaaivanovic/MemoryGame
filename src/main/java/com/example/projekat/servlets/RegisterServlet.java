@@ -8,6 +8,8 @@ import java.io.*;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.*;
 import jakarta.servlet.http.*;
+import org.mindrot.jbcrypt.BCrypt;
+
 import java.util.List;
 
 @WebServlet(name = "registerServlet", value = "/registerServlet")
@@ -38,8 +40,10 @@ public class RegisterServlet extends HttpServlet {
         }
         else{
             UserEntity user = new UserEntity();
+            String salt = BCrypt.gensalt();
             user.setUsername(username);
-            user.setPassword(password);
+            user.setPassword(BCrypt.hashpw(password, salt));
+            user.setPasswordSalt(salt);
             user.setRoleId(1);
             user.setGamesPlayed(0);
             user.setGamesWon(0);

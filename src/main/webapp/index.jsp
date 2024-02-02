@@ -2,6 +2,7 @@
 <%@ page import="com.example.projekat.Database" %>
 <%@ page import="entities.UserEntity" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.mindrot.jbcrypt.BCrypt" %>
 <%
     EntityManager entityManager = Database.getConnection();
     String error = "";
@@ -28,7 +29,7 @@
             }
             else {
                 UserEntity user = u.get(0);
-                if (!user.getPassword().equals(request.getParameter("password"))) {
+                if (!user.getPassword().equals(BCrypt.hashpw(request.getParameter("password"), user.getPasswordSalt()))) {
                     session.setAttribute("error", "Invalid password!");
                 }
                 else
@@ -36,7 +37,7 @@
                     session.setAttribute("username", user.getUsername());
                     session.setAttribute("id", user.getId());
                     session.setAttribute("role", user.getRoleId());
-
+                    session.setAttribute("error", null);
                     if (user.getRoleId() == 1) response.sendRedirect("user.jsp");
                     else response.sendRedirect("admin.jsp");
                 }

@@ -22,6 +22,7 @@
         String sql = "select * from users where id=" + session.getAttribute("id");
         UserEntity user = (UserEntity)em.createNativeQuery(sql, UserEntity.class).getResultList().get(0);
 
+        System.out.println("RANK JE " + user.getRank());
         username = user.getUsername();
         if (user.getRank() != null) rank = user.getRank(); else rank = "-";
         gamesPlayed = user.getGamesPlayed();

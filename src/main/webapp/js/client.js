@@ -8,6 +8,12 @@ function setEvents()
     socket.on("receiveBoard", (board, turn, score, otherScore, win) => updateBoard(board, turn, score, otherScore, win));
     socket.on("appendMessage", (msg) => appendMessage(msg));
     socket.on("receiveActiveAndQueued", (active, queued) => setActiveAndQueued(active, queued));
+    socket.on("playerLeft", (gameId, idLeft) => onPlayerLeft(gameId, idLeft));
+}
+
+function onPlayerLeft(gameId, idLeft)
+{
+    if (gameId == sessionStorage.getItem("gameId") && idLeft == sessionStorage.getItem("id")) alert("Your opponent left the game. You win!");
 }
 
 function getSessionData() {
@@ -79,8 +85,7 @@ async function setup() {
 }
 
 function setActiveAndQueued(active, queue){
-    console.log(active);
-    console.log(queue);
+    if (window.location.href != "http://localhost:8081/memoryGame/user.jsp") return;
     let activeElement = document.getElementById("active");
     let queuedElement = document.getElementById("queue");
     activeElement.innerText = active;
@@ -167,14 +172,14 @@ function updateBoard(board, turn, score, otherScore, win)
 
     if (win != 0)
     {
-        if (win == sessionStorage.getItem("id"))
-        {
-            alert("Congratulations! You won.");
+        if (win == sessionStorage.getItem("id")) {
+            document.getElementById("result").innerText = "Congratulations! You won.";
         }
-        else
-        {
-            alert("Oh no! You lost.");
+        else {
+            document.getElementById("result").innerText = "You lost! Better luck next time.";
         }
+        let myModal = new bootstrap.Modal(document.getElementById('endModal'));
+        myModal.show();
     }
     gameBoardElement.innerHTML = gameBoard
 }

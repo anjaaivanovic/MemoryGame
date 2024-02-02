@@ -7,7 +7,9 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
+import com.example.projekat.Database;
 import engine.GameEngine;
+import jakarta.persistence.EntityManager;
 
 import java.util.*;
 
@@ -19,6 +21,7 @@ public class ServerSocket {
     private HashMap<Integer, SocketIOClient> activePlayers;
     private HashMap<Integer, SocketIOClient> playerQueue;
     private HashMap<UUID, GameEngine> activeGames;
+    private EntityManager database;
 
     private void configure(){
         config = new Configuration();
@@ -32,6 +35,7 @@ public class ServerSocket {
         activePlayers = new HashMap<>();
         playerQueue = new HashMap<>();
         activeGames = new HashMap<>();
+        database = Database.getConnection();
         setConnectListener();
         setDisconnectListener();
         setQueueListener();
@@ -91,11 +95,43 @@ public class ServerSocket {
         server.addDisconnectListener(new DisconnectListener() {
             @Override
             public void onDisconnect(SocketIOClient socketIOClient) {
+                Integer id = -1;
+                for (Map.Entry<Integer, SocketIOClient> entry : activePlayers.entrySet()) {
+                    if (socketIOClient.getSessionId().equals(entry.getValue().getSessionId())) {
+                        id = entry.getKey();
+                    }
+                }
                 activePlayers.entrySet().removeIf(player -> player.getValue().getSessionId().equals(socketIOClient.getSessionId()));
                 playerQueue.entrySet().removeIf(player -> player.getValue().getSessionId().equals(socketIOClient.getSessionId()));
                 broadcastPlayerState("receiveActiveAndQueued", activePlayers.size(), playerQueue.size());
+                //checkIfInGame(id);
             }
         });
+    }
+
+    private void broadcast(String event, UUID gameId, Integer idLeft)
+    {
+        var clients = this.activePlayers.values();
+        for (var client: clients) {
+            client.sendEvent(event, gameId, idLeft);
+        }
+    }
+    private void checkIfInGame(Integer id)
+    {
+        System.out.println("Checking if there was an ongoing game...");
+        for (Map.Entry<UUID, GameEngine> game : activeGames.entrySet()) {
+            GameEngine engine = game.getValue();
+            if (engine.getPlayer1() == id) {
+                System.out.println("There was! Player 1 left the game.");
+                activeGames.remove(game.getKey());
+                broadcast("playerLeft", engine.getId(), engine.getPlayer2());
+            }
+            else if (engine.getPlayer2() == id){
+                System.out.println("There was! Player 2 left the game.");
+                activeGames.remove(game.getKey());
+                broadcast("playerLeft", engine.getId(), engine.getPlayer1());
+            }
+        }
     }
 
     private void setQueueListener(){
@@ -125,14 +161,19 @@ public class ServerSocket {
 
     private void tryMatchPlayers() {
         if (playerQueue.size() >= 2) {
-            Iterator<Map.Entry<Integer, SocketIOClient>> iterator = activePlayers.entrySet().iterator();
+            Iterator<Map.Entry<Integer, SocketIOClient>> iterator = playerQueue.entrySet().iterator();
             Map.Entry<Integer, SocketIOClient> p1 = iterator.next();
             Map.Entry<Integer, SocketIOClient> p2 = iterator.next();
 
             Integer id1 = p1.getKey();
             Integer id2 = p2.getKey();
+
             SocketIOClient player1 = p1.getValue();
             SocketIOClient player2 = p2.getValue();
+
+            playerQueue.remove(id1);
+            playerQueue.remove(id2);
+
             startGame(player1, player2, id1, id2);
         }
     }
@@ -173,7 +214,7 @@ public class ServerSocket {
 
         if (win != 0)
         {
-            activeGames.remove(gameId);
+            handleWin(engine);
             System.out.println("Game #" + gameId + " finished! Ongoing games:");
             for (var game:activeGames.keySet()) { System.out.println(game);}
         }
@@ -181,6 +222,39 @@ public class ServerSocket {
         SocketIOClient socket2 = activePlayers.get(engine.getPlayer2());
         socket1.sendEvent("receiveBoard", boardJson, turn, score1, score2, win);
         socket2.sendEvent("receiveBoard", boardJson, turn, score1, score2, win);
+
+        if (win != 0) activeGames.remove(engine.getId());
+    }
+
+    private void handleWin(GameEngine engine)
+    {
+        System.out.println("Handling win...");
+        int winner, loser;
+        if (engine.checkWinner() == engine.getPlayer1()){
+            winner = engine.getPlayer1();
+            loser = engine.getPlayer2();
+        }
+        else{
+            winner = engine.getPlayer2();
+            loser = engine.getPlayer1();
+        }
+
+        System.out.println(winner);
+        System.out.println(loser);
+        try {
+            database.getTransaction().begin();
+            String sql = "update users set gamesWon=gamesWon+1 where id=" + winner;
+            database.createNativeQuery(sql).executeUpdate();
+            sql = "update users set gamesPlayed=gamesPlayed+1 where id=" + winner;
+            database.createNativeQuery(sql).executeUpdate();
+            sql = "update users set gamesPlayed=gamesPlayed+1 where id=" + loser;
+            database.createNativeQuery(sql).executeUpdate();
+            database.getTransaction().commit();
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+        }
 
     }
 

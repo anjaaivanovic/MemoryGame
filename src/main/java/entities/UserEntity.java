@@ -16,6 +16,9 @@ public class UserEntity {
     @Column(name = "password")
     private String password;
     @Basic
+    @Column(name = "passwordSalt")
+    private String passwordSalt;
+    @Basic
     @Column(name = "gamesPlayed")
     private int gamesPlayed;
     @Basic
@@ -25,7 +28,7 @@ public class UserEntity {
     @Column(name = "roleId")
     private int roleId;
     @Basic
-    @Column(name = "`rank`")
+    @Column(name = "playerRank")
     private String rank;
 
     public int getId() {
@@ -51,6 +54,10 @@ public class UserEntity {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public String getPasswordSalt() { return passwordSalt; }
+
+    public void setPasswordSalt(String passwordSalt) { this.passwordSalt = passwordSalt; }
 
     public int getGamesPlayed() {
         return gamesPlayed;

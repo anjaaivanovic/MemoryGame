@@ -112,4 +112,8 @@ public class GameEngine implements Serializable {
     public int getScore2() {
         return score2;
     }
+
+    public UUID getId() {
+        return id;
+    }
 }

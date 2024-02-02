@@ -10,6 +10,7 @@
         else response.sendRedirect("user.jsp");
     }
 
+    session.setAttribute("error", null);
     if (session.getAttribute("regError") != null) error = (String)session.getAttribute("regError");
     if (session.getAttribute("username") != null) username = (String)session.getAttribute("username");
 
