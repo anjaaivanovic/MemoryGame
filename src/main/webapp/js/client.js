@@ -1,5 +1,4 @@
 let socket;
-let userId;
 function setEvents()
 {
     socket.on('connect', () => onConnect());
@@ -8,6 +7,7 @@ function setEvents()
     socket.on('startGame', (data) => startGame(data));
     socket.on("receiveBoard", (board, turn, score, otherScore, win) => updateBoard(board, turn, score, otherScore, win));
     socket.on("appendMessage", (msg) => appendMessage(msg));
+    socket.on("receiveActiveAndQueued", (active, queued) => setActiveAndQueued(active, queued));
 }
 
 function getSessionData() {
@@ -40,14 +40,13 @@ async function setup() {
 
         try {
             const data = await getSessionData();
-            console.log(data)
             let id = data.id
             let username = data.username
             if (id !== null) {
-                userId = id;
-                sessionStorage.setItem("id", userId);
-                console.log("Retrieved userId:", userId);
+                sessionStorage.setItem("id", id);
+                console.log("Retrieved userId:", id);
                 socket.emit("saveId", id);
+                document.getElementById("join").disabled = false;
             } else {
                 console.log('Id not found in session.');
             }
@@ -69,25 +68,40 @@ async function setup() {
         console.log("Connection reestablished");
     }
 
+    if (sessionStorage.getItem("id")) socket.emit("saveId", sessionStorage.getItem("id"));
+
+    if (window.location.href == "http://localhost:8081/memoryGame/user.jsp") {
+        if (sessionStorage.getItem("id")) { document.getElementById("join").disabled = false; }
+        socket.emit("getActiveAndQueued");
+    }
+
     setEvents();
+}
+
+function setActiveAndQueued(active, queue){
+    console.log(active);
+    console.log(queue);
+    let activeElement = document.getElementById("active");
+    let queuedElement = document.getElementById("queue");
+    activeElement.innerText = active;
+    queuedElement.innerText = queue;
 }
 
 //join queue
 function join(){
-    console.log("Join button clicked");
     let joinButton = document.getElementById("join");
-    console.log("Button state before: ", joinButton.disabled);
-
+    let userId = sessionStorage.getItem("id");
     socket.emit("joinQueue",userId);
     if (joinButton) {
         joinButton.disabled = true;
-        console.log("Sent join req!");
-        console.log("Button state after: ", joinButton.disabled);
     }
 }
 
 //receive queue status
-function status(status){ document.getElementById("status").innerHTML = status; }
+function status(status)
+{
+    document.getElementById("status").innerHTML = status;
+}
 
 //start game
 function startGame(gameId){
@@ -174,7 +188,8 @@ function playMove(x, y){
 
 function sendMessage(){
     let input = document.getElementById("chatInput");
-    let text = sessionStorage.getItem("username") + ": " + input.value;
+    if (input.value.trim() == "") return;
+    let text = "<b>" + sessionStorage.getItem("username") + ":</b> " + input.value;
     input.value = "";
     let gameId = sessionStorage.getItem("gameId");
     socket.emit("sendMessage", [gameId, text])
@@ -185,7 +200,7 @@ function appendMessage(msg){
     console.log(msg)
     let container = document.getElementById("chat");
     let msgDiv = document.createElement("div");
-    msgDiv.innerText = msg;
+    msgDiv.innerHTML = msg;
     container.append(msgDiv);
     console.log("Message appended!");
 }

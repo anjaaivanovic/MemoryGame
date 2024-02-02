@@ -16,3 +16,11 @@
     font-size: 130%;
     transition: 0.3s;
 }
+
+body{
+    background-image: url('../images/Untitled design2.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+

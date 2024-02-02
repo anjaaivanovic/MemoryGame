@@ -28,7 +28,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="window.location = 'logout.jsp'">Logout</button>
+                <button type="button" class="btn btn-primary" onclick="socket.disconnect();window.location = 'logout.jsp'">Logout</button>
             </div>
         </div>
     </div>
@@ -49,23 +49,42 @@
         <a class="nav-link ml-auto" data-bs-toggle="modal" data-bs-target="#logoutModal" style="cursor: pointer">Logout</a>
     </div>
 </nav>
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title">Welcome to Memory Game!</h5>
-        <br>
-        <p class="card-text">
-            Flip and match cards strategically to outsmart your opponents and emerge as victorious with the most successful guesses. Quick thinking and sharp memory are your tickets to victory.<br><br>
-            To find an opponent and start a game, please join the queue.
-        </p>
-        <br>
-        <button onclick="join()" class="btn btn-primary" id="join">Join queue</button>
-        <div id="msg"><span id="status"></span><span id="countdown"></span></div>
+<div class="container">
+    <div id="players" class="d-flex justify-content-center">
+        <div class="card col-2">
+            <div class="card-body">
+                <h5 class="card-title">Active players</h5>
+                <p class="card-text" id="active">
+                </p>
+            </div>
+        </div>
+        <div class="col-1"></div>
+        <div class="card col-2">
+            <div class="card-body">
+                <h5 class="card-title">Players in queue</h5>
+                <p class="card-text" id="queue">
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="card col-6" id="main">
+        <div class="card-body">
+            <h5 class="card-title">Welcome to Memory Game!</h5>
+            <br>
+            <p class="card-text">
+                Flip and match cards strategically to outsmart your opponents and emerge as victorious with the most successful guesses. Quick thinking and sharp memory are your tickets to victory.<br><br>
+                To find an opponent and start a game, please join the queue.
+            </p>
+            <br>
+            <button onclick="join()" class="btn btn-primary" id="join" disabled>Join queue</button>
+            <div id="msg"><br><span id="status"></span><span id="countdown"></span></div>
+        </div>
     </div>
 </div>
-</section>
 <div id="manual">
     <jsp:include page="manual.html"/>
 </div>
+</section>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
 <script src="js/client.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
@@ -76,19 +95,18 @@
         font-size: 130%;
         color: white;
     }
-    body{
-        background-image: url('images/Untitled design2.png');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+
+    #main{
+        align-content: center;
+        width: 50%;
+        margin: auto;
+        margin-top: 7%;
     }
-    .card{
-        width: 40%;
-        height: 40%;
-        margin-top: 10%;
-        margin-left: 30%;
-        border-radius: 12px;
+
+    button{
+        box-shadow: 5px 5px 2px #aaaaaa;
     }
+
     .card-text{
         color: #484848;
     }
@@ -96,6 +114,11 @@
     .card-title{
         font-size: 130%;
         color: #21807c;
+    }
+
+    .card{
+        border-radius: 18px;
+        box-shadow: 10px 10px 5px #aaaaaa;
     }
 
     #join{
@@ -106,5 +129,19 @@
         border-radius: 10px;
     }
 
+    #msg{
+        text-align: center;
+    }
+
+    #players{
+        margin-top: 5%;
+        text-align: center;
+    }
+
+    #active, #queue{
+        font-size: 200%;
+        font-weight: bold;
+        color: #32C6C2;
+    }
 </style>
 </html>

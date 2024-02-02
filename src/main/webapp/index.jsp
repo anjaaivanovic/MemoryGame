@@ -59,7 +59,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Lexend&display=swap" rel="stylesheet">
     <link href="styles/forms.css" rel="stylesheet">
 </head>
-<body>
+<body onload="sessionStorage.clear();">
 <section class="vh-100">
     <div class="container py-5 h-100">
         <div class="row d-flex align-items-center justify-content-center h-100">

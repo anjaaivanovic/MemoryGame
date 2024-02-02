@@ -18,6 +18,11 @@ body{
     border: 1px solid #21807c !important;
 }
 
+.btn-primary:disabled{
+    background-color: #21807c !important;
+    border: 1px solid #21807c !important;
+}
+
 .form-control:focus{
     border-color: #32C6C2;
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px #32C6C2;

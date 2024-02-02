@@ -1,6 +1,5 @@
 package server;
 
-import client.ClientData;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOClient;
@@ -9,20 +8,17 @@ import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
 import engine.GameEngine;
-import entities.UserEntity;
 
-import java.io.Console;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public class ServerSocket {
     private static Configuration config;
     private static SocketIOServer server;
     private static ServerSocket myServer;
-    private HashMap<Integer, ClientData> activePlayers = new HashMap<>();
-    private Queue<ClientData> playerQueue = new ConcurrentLinkedQueue<>();
-    private static HashMap<UUID, GameEngine> activeGames = new HashMap<>();
+    private HashMap<Integer, SocketIOClient> activePlayers;
+    private HashMap<Integer, SocketIOClient> playerQueue;
+    private HashMap<UUID, GameEngine> activeGames;
 
     private void configure(){
         config = new Configuration();
@@ -33,6 +29,9 @@ public class ServerSocket {
     private ServerSocket(){
         configure();
         server = new SocketIOServer(config);
+        activePlayers = new HashMap<>();
+        playerQueue = new HashMap<>();
+        activeGames = new HashMap<>();
         setConnectListener();
         setDisconnectListener();
         setQueueListener();
@@ -40,6 +39,7 @@ public class ServerSocket {
         setSaveIdListener();
         setPlayMoveListener();
         setSendMessageListener();
+        setActiveAndQueuedListener();
         server.start();
         System.out.println("Server started on http://localhost:5678");
     }
@@ -74,19 +74,26 @@ public class ServerSocket {
         });
     }
 
+    private void broadcastPlayerState(String event, int activePlayers, int queuedPlayers)
+    {
+        var clients = this.activePlayers.values();
+        for (var client: clients) {
+            client.sendEvent(event, activePlayers, queuedPlayers);
+        }
+    }
     private void setId(SocketIOClient socket, int userId){
-        UserEntity u = new UserEntity();
-        u.setId(userId);
-        ClientData clientData = new ClientData(socket, u);
-        activePlayers.put(userId, clientData);
+        activePlayers.put(userId, socket);
         System.out.println("saved id " + userId);
+        broadcastPlayerState("receiveActiveAndQueued", activePlayers.size(), playerQueue.size());
     }
 
     private void setDisconnectListener(){
         server.addDisconnectListener(new DisconnectListener() {
             @Override
             public void onDisconnect(SocketIOClient socketIOClient) {
-                System.out.println("Client disconnected: " + socketIOClient.getSessionId());
+                activePlayers.entrySet().removeIf(player -> player.getValue().getSessionId().equals(socketIOClient.getSessionId()));
+                playerQueue.entrySet().removeIf(player -> player.getValue().getSessionId().equals(socketIOClient.getSessionId()));
+                broadcastPlayerState("receiveActiveAndQueued", activePlayers.size(), playerQueue.size());
             }
         });
     }
@@ -101,33 +108,38 @@ public class ServerSocket {
     }
 
     private void joinQueue(SocketIOClient client, Integer userId) {
-        ClientData clientData = activePlayers.get(userId);
         //reset the socketId
-        clientData.setSocket(client);
-        activePlayers.put(userId, clientData);
+        activePlayers.put(userId, client);
 
-        playerQueue.add(clientData);
+        playerQueue.put(userId, client);
         client.sendEvent("queueStatus", "You joined the queue. Waiting for an opponent...");
+        broadcastPlayerState("receiveActiveAndQueued", activePlayers.size(), playerQueue.size());
         tryMatchPlayers();
     }
 
 
     private void tryMatchPlayers() {
         if (playerQueue.size() >= 2) {
-            ClientData player1 = playerQueue.poll();
-            ClientData player2 = playerQueue.poll();
-            startGame(player1, player2);
+            Iterator<Map.Entry<Integer, SocketIOClient>> iterator = activePlayers.entrySet().iterator();
+            Map.Entry<Integer, SocketIOClient> p1 = iterator.next();
+            Map.Entry<Integer, SocketIOClient> p2 = iterator.next();
+
+            Integer id1 = p1.getKey();
+            Integer id2 = p2.getKey();
+            SocketIOClient player1 = p1.getValue();
+            SocketIOClient player2 = p2.getValue();
+            startGame(player1, player2, id1, id2);
         }
     }
 
-    private void startGame(ClientData player1, ClientData player2){
+    private void startGame(SocketIOClient player1, SocketIOClient player2, Integer id1, Integer id2){
         UUID gameId = UUID.randomUUID();
-        player1.getSocket().sendEvent("startGame", gameId);
-        player2.getSocket().sendEvent("startGame", gameId);
+        player1.sendEvent("startGame", gameId);
+        player2.sendEvent("startGame", gameId);
 
-        System.out.println("Game " + gameId + " starting between players: " + player1.getSocket().getSessionId()  + " and " + player2.getSocket().getSessionId());
+        System.out.println("Game " + gameId + " starting between players: " + player1.getSessionId()  + " and " + player2.getSessionId());
 
-        GameEngine engine = new GameEngine(gameId, player1.getUserData().getId(), player2.getUserData().getId());
+        GameEngine engine = new GameEngine(gameId, id1, id2);
         engine.GenerateBoard();
         activeGames.put(gameId, engine);
     }
@@ -145,9 +157,7 @@ public class ServerSocket {
 
     private void sendBoard(SocketIOClient client, UUID gameId, Integer userId){
         //reset the socketId
-        ClientData clientData = activePlayers.get(userId);
-        clientData.setSocket(client);
-        activePlayers.put(userId, clientData);
+        activePlayers.put(userId, client);
 
         GameEngine engine = activeGames.get(gameId);
         String boardJson = engine.getBoardAsJSONString();
@@ -156,8 +166,14 @@ public class ServerSocket {
         int score2 = engine.getScore2();
         Integer win = engine.checkWinner();
 
-        SocketIOClient socket1 = activePlayers.get(engine.getPlayer1()).getSocket();
-        SocketIOClient socket2 = activePlayers.get(engine.getPlayer2()).getSocket();
+        if (win != 0)
+        {
+            activeGames.remove(gameId);
+            System.out.println("Game #" + gameId + " finished! Ongoing games:");
+            for (var game:activeGames.keySet()) { System.out.println(game);}
+        }
+        SocketIOClient socket1 = activePlayers.get(engine.getPlayer1());
+        SocketIOClient socket2 = activePlayers.get(engine.getPlayer2());
         socket1.sendEvent("receiveBoard", boardJson, turn, score1, score2, win);
         socket2.sendEvent("receiveBoard", boardJson, turn, score1, score2, win);
 
@@ -181,9 +197,7 @@ public class ServerSocket {
     private void playMove(SocketIOClient client, UUID gameId, Integer userId, int x, int y)
     {
         //reset the socketId
-        ClientData clientData = activePlayers.get(userId);
-        clientData.setSocket(client);
-        activePlayers.put(userId, clientData);
+        activePlayers.put(userId, client);
 
         GameEngine engine = activeGames.get(gameId);
         engine.playMove(x, y, userId);
@@ -206,9 +220,18 @@ public class ServerSocket {
     private void sendMessage(UUID gameId, String msg)
     {
         GameEngine engine = activeGames.get(gameId);
-        SocketIOClient socket1 = activePlayers.get(engine.getPlayer1()).getSocket();
-        SocketIOClient socket2 = activePlayers.get(engine.getPlayer2()).getSocket();
+        SocketIOClient socket1 = activePlayers.get(engine.getPlayer1());
+        SocketIOClient socket2 = activePlayers.get(engine.getPlayer2());
         socket1.sendEvent("appendMessage", msg);
         socket2.sendEvent("appendMessage", msg);
+    }
+
+    private void setActiveAndQueuedListener(){
+        server.addEventListener("getActiveAndQueued", Object.class, new DataListener<>() {
+            @Override
+            public void onData(SocketIOClient socketIOClient, Object o, AckRequest ackRequest) throws Exception {
+                socketIOClient.sendEvent("receiveActiveAndQueued", activePlayers.size(), playerQueue.size());
+            }
+        });
     }
 }
