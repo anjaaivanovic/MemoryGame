@@ -10,7 +10,6 @@
   EntityManager entityManager = Database.getConnection();
 
   if (request.getParameter("delete") != null){
-    System.out.println("DEL");
 
     UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("delete")));
     entityManager.getTransaction().begin();
@@ -19,7 +18,6 @@
   }
 
   if (request.getParameter("promote") != null){
-    System.out.println("PROM");
     UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("promote")) );
     entityManager.getTransaction().begin();
     user.setRoleId(2);
@@ -27,7 +25,6 @@
   }
 
   if (request.getParameter("demote") != null){
-    System.out.println("DEM");
 
     UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("demote")));
     entityManager.getTransaction().begin();
@@ -35,15 +32,52 @@
     entityManager.getTransaction().commit();
   }
 
-  String sql = "select * from users u where roleId = 1";
+  //pagination preparation (player and admin count)
+  String sql = "select count(id) from users where roleId = 1";
+  int totalPlayers = ((Number)(entityManager.createNativeQuery(sql).getSingleResult())).intValue();
+  sql = "select count(id) from users where roleId = 2";
+  int totalAdmins = ((Number)(entityManager.createNativeQuery(sql).getSingleResult())).intValue();
+  int itemsPerPage = 2;
+
+  int pageNumber = 1;
+  int offset = 0;
+  if (request.getParameter("page") == null || request.getParameter("adminPage") == null) response.sendRedirect("admin.jsp?page=1&adminPage=1");
+  else{
+    pageNumber = Integer.parseInt(request.getParameter("page"));
+    offset = (pageNumber - 1) * itemsPerPage;
+  }
+
+  //fetch players by page number
+  sql = "select * from users where roleId = 1 limit " + itemsPerPage + " offset " + offset;
 
   @SuppressWarnings("unchecked")
   List<UserEntity> players = entityManager.createNativeQuery(sql, UserEntity.class).getResultList();
 
-  sql = "select * from users u where roleId = 2";
+  int adminPageNumber = 1;
+  int adminOffset = 0;
+  if (request.getParameter("adminPage") != null)
+  {
+    adminPageNumber = Integer.parseInt(request.getParameter("adminPage"));
+    adminOffset = (adminPageNumber - 1) * itemsPerPage;
+  }
+
+  //fetch admins by page number
+  sql = "select * from users where roleId = 2 limit " + itemsPerPage + " offset " + adminOffset;
   @SuppressWarnings("unchecked")
   List<UserEntity> admins = entityManager.createNativeQuery(sql, UserEntity.class).getResultList();
 
+
+  String playerPagination = "";
+  for (int i = 1; i <= Math.ceil((double) totalPlayers / itemsPerPage); i++) {
+    playerPagination += "<a href='admin.jsp?page=" + i + "&adminPage="+ adminPageNumber +"'>" + i +"</a>";
+  }
+  String adminPagination = "";
+  for (int i = 1; i <= Math.ceil((double) totalAdmins / itemsPerPage); i++) {
+    adminPagination += "<a href='admin.jsp?adminPage=" + i + "&page="+ pageNumber +"'>" + i +"</a>";
+  }
+
+  System.out.println(playerPagination);
+  System.out.println(adminPagination);
   //players
   String playerStr = "<h1>Registered Players</h1>" +
           "<table class='table'>" +
@@ -204,8 +238,14 @@
   </nav>
   <div class="container">
     <div class="row"><%=playerStr%></div>
+    <div class="pagination">
+      <%=playerPagination%>
+    </div>
     <br>
     <div class="row"><%=adminStr%></div>
+    <div class="pagination">
+      <%=adminPagination%>
+    </div>
   </div>
 </section>
 <div id="manual">
@@ -225,6 +265,20 @@
   .container{
     margin-top: 2%;
     margin-bottom: 15%;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .pagination a {
+    padding: 8px 16px;
+    text-decoration: none;
+    background-color: #f1f1f1;
+    color: #000;
+    margin: 0 4px;
   }
 </style>
 </html>
