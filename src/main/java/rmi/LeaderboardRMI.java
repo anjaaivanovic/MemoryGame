@@ -20,8 +20,7 @@ public class LeaderboardRMI extends UnicastRemoteObject implements ILeaderboardR
         String sql = "select * from users where roleId <> 2 order by (CAST(gamesPlayed AS DECIMAL(10, 2)) / NULLIF(CAST(gamesWon AS DECIMAL(10, 2)), 0)) limit 10";
         List<UserEntity> leaderboard = em.createNativeQuery(sql, UserEntity.class).getResultList();
 
-        String leaderboardStr = "<h1>Leaderboard</h1>" +
-                "<table class='table'>" +
+        String leaderboardStr = "<table class='table'>" +
                 "<thead class='thead-dark'>" +
                 "<tr>" +
                 "<th scope='col'>Place</th>" +

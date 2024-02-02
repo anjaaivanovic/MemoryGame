@@ -5,79 +5,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
-  if (request.getSession().getAttribute("id") == null) response.sendRedirect("index.jsp");
-
-  EntityManager entityManager = Database.getConnection();
-
-  if (request.getParameter("delete") != null){
-
-    UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("delete")));
-    entityManager.getTransaction().begin();
-    entityManager.remove(user);
-    entityManager.getTransaction().commit();
-  }
-
-  if (request.getParameter("promote") != null){
-    UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("promote")) );
-    entityManager.getTransaction().begin();
-    user.setRoleId(2);
-    entityManager.getTransaction().commit();
-  }
-
-  if (request.getParameter("demote") != null){
-
-    UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("demote")));
-    entityManager.getTransaction().begin();
-    user.setRoleId(1);
-    entityManager.getTransaction().commit();
-  }
-
-  //pagination preparation (player and admin count)
-  String sql = "select count(id) from users where roleId = 1";
-  int totalPlayers = ((Number)(entityManager.createNativeQuery(sql).getSingleResult())).intValue();
-  sql = "select count(id) from users where roleId = 2";
-  int totalAdmins = ((Number)(entityManager.createNativeQuery(sql).getSingleResult())).intValue();
-  int itemsPerPage = 2;
-
-  int pageNumber = 1;
-  int offset = 0;
-  if (request.getParameter("page") == null || request.getParameter("adminPage") == null) response.sendRedirect("admin.jsp?page=1&adminPage=1");
-  else{
-    pageNumber = Integer.parseInt(request.getParameter("page"));
-    offset = (pageNumber - 1) * itemsPerPage;
-  }
-
-  //fetch players by page number
-  sql = "select * from users where roleId = 1 limit " + itemsPerPage + " offset " + offset;
-
-  @SuppressWarnings("unchecked")
-  List<UserEntity> players = entityManager.createNativeQuery(sql, UserEntity.class).getResultList();
-
-  int adminPageNumber = 1;
-  int adminOffset = 0;
-  if (request.getParameter("adminPage") != null)
-  {
-    adminPageNumber = Integer.parseInt(request.getParameter("adminPage"));
-    adminOffset = (adminPageNumber - 1) * itemsPerPage;
-  }
-
-  //fetch admins by page number
-  sql = "select * from users where roleId = 2 limit " + itemsPerPage + " offset " + adminOffset;
-  @SuppressWarnings("unchecked")
-  List<UserEntity> admins = entityManager.createNativeQuery(sql, UserEntity.class).getResultList();
-
-
-  String playerPagination = "";
-  for (int i = 1; i <= Math.ceil((double) totalPlayers / itemsPerPage); i++) {
-    playerPagination += "<a href='admin.jsp?page=" + i + "&adminPage="+ adminPageNumber +"'>" + i +"</a>";
-  }
-  String adminPagination = "";
-  for (int i = 1; i <= Math.ceil((double) totalAdmins / itemsPerPage); i++) {
-    adminPagination += "<a href='admin.jsp?adminPage=" + i + "&page="+ pageNumber +"'>" + i +"</a>";
-  }
-
-  System.out.println(playerPagination);
-  System.out.println(adminPagination);
   //players
   String playerStr = "<h1>Registered Players</h1>" +
           "<table class='table'>" +
@@ -91,54 +18,6 @@
           "</tr></thead>" +
           "<tbody>";
 
-  for (UserEntity p: players){
-    String rank = "-";
-    if (p.getRank() != null && !p.getRank().equals("-")) rank = p.getRank();
-    playerStr += "<tr>" +
-            "<td>"+ p.getUsername() + "</td>" +
-            "<td>"+ p.getGamesWon()+ " / " + p.getGamesPlayed() + "</td>" +
-            "<td>" + rank + "</td>" +
-            "<td><div class='text-center'><button type='button' class='btn btn-light' data-bs-toggle='modal' data-bs-target='#promoteModal-"+p.getId()+"'>Promote to admin</button></div></td>" +
-            "<div class='modal fade' id='promoteModal-" + p.getId() + "' tabindex='-1' role='dialog' aria-labelledby='promoteModalLabel' aria-hidden='true'>"
-            + "<div class='modal-dialog'>"
-            + "<div class='modal-content'>"
-            + "<div class='modal-header'>"
-            + "<h5 class='modal-title' fs-5 id='promoteModalLabel'>Promote to admin?</h5>"
-            + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
-            + "</div>"
-            + "<div class='modal-body'>"
-            + "<p>Are you sure you want to promote this player to admin?</p>"
-            + "</div>"
-            + "<div class='modal-footer'>"
-            + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
-            + "<form><button type='submit' class='btn btn-primary' name='promote' value='" + p.getId() + "'>Promote</button></form>"
-            + "</div>"
-            + "</div>"
-            + "</div>"
-            + "</div>"+
-            "<td><button type='button' class='btn btn-light' data-bs-toggle='modal' data-bs-target='#deleteModal-"+p.getId()+"'>Delete</button></td>" +
-            "<div class='modal fade' id='deleteModal-" + p.getId() + "' tabindex='-1' role='dialog' aria-labelledby='deleteModalLabel' aria-hidden='true'>"
-            + "<div class='modal-dialog'>"
-            + "<div class='modal-content'>"
-            + "<div class='modal-header'>"
-            + "<h5 class='modal-title' fs-5 id='promoteModalLabel'>Delete player?</h5>"
-            + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
-            + "</div>"
-            + "<div class='modal-body'>"
-            + "<p>Are you sure you want to delete this player?</p>"
-            + "</div>"
-            + "<div class='modal-footer'>"
-            + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
-            + "<form><button type='submit' class='btn btn-primary' name='delete' value='" + p.getId() + "'>Delete</button></form>"
-            + "</div>"
-            + "</div>"
-            + "</div>"
-            + "</div>"+
-            "</tr>";
-  }
-
-  playerStr += "</tbody></table>";
-
   //admins
   String adminStr = "<h1>Administrators</h1>" +
           "<table class='table'>" +
@@ -150,50 +29,181 @@
           "</tr></thead>" +
           "<tbody>";
 
+  String playerPagination = "";
+  String adminPagination = "";
 
-  for (UserEntity a: admins){
-    adminStr += "<tr>" +
-            "<td>"+ a.getUsername() + "</td>" +
-            "<td><div class='text-center'><button type='button' class='btn btn-light' data-bs-toggle='modal' data-bs-target='#demoteModal-"+a.getId()+"'>Demote to player</button></div></td>" +
-            "<div class='modal fade' id='demoteModal-" + a.getId() + "' tabindex='-1' role='dialog' aria-labelledby='demoteModalLabel' aria-hidden='true'>"
-            + "<div class='modal-dialog'>"
-            + "<div class='modal-content'>"
-            + "<div class='modal-header'>"
-            + "<h5 class='modal-title' fs-5 id='demoteModalLabel'>Demote to player?</h5>"
-            + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
-            + "</div>"
-            + "<div class='modal-body'>"
-            + "<p>Are you sure you want to demote this admin to player?</p>"
-            + "</div>"
-            + "<div class='modal-footer'>"
-            + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
-            + "<form><button type='submit' class='btn btn-primary' name='demote' value='" + a.getId() + "'>Demote</button></form>"
-            + "</div>"
-            + "</div>"
-            + "</div>"
-            + "</div>"+
-            "<td><button type='button' class='btn btn-light' data-bs-toggle='modal' data-bs-target='#deleteModal-"+a.getId()+"'>Delete</button></td>" +
-            "<div class='modal fade' id='deleteModal-" + a.getId() + "' tabindex='-1' role='dialog' aria-labelledby='deleteModalLabel' aria-hidden='true'>"
-            + "<div class='modal-dialog'>"
-            + "<div class='modal-content'>"
-            + "<div class='modal-header'>"
-            + "<h5 class='modal-title' fs-5 id='promoteModalLabel'>Delete admin?</h5>"
-            + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
-            + "</div>"
-            + "<div class='modal-body'>"
-            + "<p>Are you sure you want to delete this admin?</p>"
-            + "</div>"
-            + "<div class='modal-footer'>"
-            + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
-            + "<form><button type='submit' class='btn btn-primary' name='delete' value='" + a.getId() + "'>Delete</button></form>"
-            + "</div>"
-            + "</div>"
-            + "</div>"
-            + "</div>"+
-            "</tr>";
+  int itemsPerPage = 2;
+  int pageNumber = 1;
+  int offset = 0;
+
+  if (session.getAttribute("id") == null || (int)session.getAttribute("role") == 1)
+  {
+    String redirect = "";
+    if (session.getAttribute("id") == null) redirect = "index.jsp";
+    else if ((int)session.getAttribute("role") == 1) redirect = "user.jsp";
+    if (redirect != "") response.sendRedirect(redirect);
   }
+  else
+  {
+    EntityManager entityManager = Database.getConnection();
 
-  adminStr += "</table></div>";
+    if (request.getParameter("delete") != null){
+
+      UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("delete")));
+      entityManager.getTransaction().begin();
+      entityManager.remove(user);
+      entityManager.getTransaction().commit();
+    }
+
+    if (request.getParameter("promote") != null){
+      UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("promote")) );
+      entityManager.getTransaction().begin();
+      user.setRoleId(2);
+      entityManager.getTransaction().commit();
+    }
+
+    if (request.getParameter("demote") != null){
+
+      UserEntity user = entityManager.find(UserEntity.class, Integer.parseInt(request.getParameter("demote")));
+      entityManager.getTransaction().begin();
+      user.setRoleId(1);
+      entityManager.getTransaction().commit();
+    }
+
+    //pagination preparation (player and admin count)
+    String sql = "select count(id) from users where roleId = 1";
+    int totalPlayers = ((Number)(entityManager.createNativeQuery(sql).getSingleResult())).intValue();
+    sql = "select count(id) from users where roleId = 2";
+    int totalAdmins = ((Number)(entityManager.createNativeQuery(sql).getSingleResult())).intValue();
+
+    if (request.getParameter("page") == null || request.getParameter("adminPage") == null) response.sendRedirect("admin.jsp?page=1&adminPage=1");
+    else{
+      pageNumber = Integer.parseInt(request.getParameter("page"));
+      offset = (pageNumber - 1) * itemsPerPage;
+    }
+
+    //fetch players by page number
+    sql = "select * from users where roleId = 1 limit " + itemsPerPage + " offset " + offset;
+
+    @SuppressWarnings("unchecked")
+    List<UserEntity> players = entityManager.createNativeQuery(sql, UserEntity.class).getResultList();
+
+    int adminPageNumber = 1;
+    int adminOffset = 0;
+    if (request.getParameter("adminPage") != null)
+    {
+      adminPageNumber = Integer.parseInt(request.getParameter("adminPage"));
+      adminOffset = (adminPageNumber - 1) * itemsPerPage;
+    }
+
+    //fetch admins by page number
+    sql = "select * from users where roleId = 2 limit " + itemsPerPage + " offset " + adminOffset;
+    @SuppressWarnings("unchecked")
+    List<UserEntity> admins = entityManager.createNativeQuery(sql, UserEntity.class).getResultList();
+
+
+    for (int i = 1; i <= Math.ceil((double) totalPlayers / itemsPerPage); i++) {
+      if (i != pageNumber) playerPagination += "<a href='admin.jsp?page=" + i + "&adminPage="+ adminPageNumber +"'>" + i +"</a>";
+      else playerPagination += "<a href='admin.jsp?page=" + i + "&adminPage="+ adminPageNumber +"' style='background-color:#32C6C2;color:white'>" + i +"</a>";
+    }
+    for (int i = 1; i <= Math.ceil((double) totalAdmins / itemsPerPage); i++) {
+      if (i != adminPageNumber) adminPagination += "<a href='admin.jsp?adminPage=" + i + "&page="+ pageNumber +"'>" + i +"</a>";
+      else adminPagination += "<a href='admin.jsp?adminPage=" + i + "&page="+ pageNumber +"' style='background-color:#32C6C2;color:white'>" + i +"</a>";
+    }
+
+    //players
+    for (UserEntity p: players){
+      String rank = "-";
+      if (p.getRank() != null && !p.getRank().equals("-")) rank = p.getRank();
+      playerStr += "<tr>" +
+              "<td>"+ p.getUsername() + "</td>" +
+              "<td>"+ p.getGamesWon()+ " / " + p.getGamesPlayed() + "</td>" +
+              "<td>" + rank + "</td>" +
+              "<td><div class='text-center'><button type='button' class='btn btn-primary' data-bs-toggle='modal' data-bs-target='#promoteModal-"+p.getId()+"'>Promote to admin</button></div></td>" +
+              "<div class='modal fade' id='promoteModal-" + p.getId() + "' tabindex='-1' role='dialog' aria-labelledby='promoteModalLabel' aria-hidden='true'>"
+              + "<div class='modal-dialog'>"
+              + "<div class='modal-content'>"
+              + "<div class='modal-header'>"
+              + "<h5 class='modal-title' fs-5 id='promoteModalLabel'>Promote to admin?</h5>"
+              + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
+              + "</div>"
+              + "<div class='modal-body'>"
+              + "<p>Are you sure you want to promote this player to admin?</p>"
+              + "</div>"
+              + "<div class='modal-footer'>"
+              + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
+              + "<form><button type='submit' class='btn btn-primary' name='promote' value='" + p.getId() + "'>Promote</button></form>"
+              + "</div>"
+              + "</div>"
+              + "</div>"
+              + "</div>"+
+              "<td><button type='button' class='btn btn-primary' data-bs-toggle='modal' data-bs-target='#deleteModal-"+p.getId()+"'>Delete</button></td>" +
+              "<div class='modal fade' id='deleteModal-" + p.getId() + "' tabindex='-1' role='dialog' aria-labelledby='deleteModalLabel' aria-hidden='true'>"
+              + "<div class='modal-dialog'>"
+              + "<div class='modal-content'>"
+              + "<div class='modal-header'>"
+              + "<h5 class='modal-title' fs-5 id='promoteModalLabel'>Delete player?</h5>"
+              + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
+              + "</div>"
+              + "<div class='modal-body'>"
+              + "<p>Are you sure you want to delete this player?</p>"
+              + "</div>"
+              + "<div class='modal-footer'>"
+              + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
+              + "<form><button type='submit' class='btn btn-primary' name='delete' value='" + p.getId() + "'>Delete</button></form>"
+              + "</div>"
+              + "</div>"
+              + "</div>"
+              + "</div>"+
+              "</tr>";
+    }
+
+    playerStr += "</tbody></table>";
+
+    for (UserEntity a: admins){
+      adminStr += "<tr>" +
+              "<td>"+ a.getUsername() + "</td>" +
+              "<td><div class='text-center'><button type='button' class='btn btn-primary' data-bs-toggle='modal' data-bs-target='#demoteModal-"+a.getId()+"'>Demote to player</button></div></td>" +
+              "<div class='modal fade' id='demoteModal-" + a.getId() + "' tabindex='-1' role='dialog' aria-labelledby='demoteModalLabel' aria-hidden='true'>"
+              + "<div class='modal-dialog'>"
+              + "<div class='modal-content'>"
+              + "<div class='modal-header'>"
+              + "<h5 class='modal-title' fs-5 id='demoteModalLabel'>Demote to player?</h5>"
+              + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
+              + "</div>"
+              + "<div class='modal-body'>"
+              + "<p>Are you sure you want to demote this admin to player?</p>"
+              + "</div>"
+              + "<div class='modal-footer'>"
+              + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
+              + "<form><button type='submit' class='btn btn-primary' name='demote' value='" + a.getId() + "'>Demote</button></form>"
+              + "</div>"
+              + "</div>"
+              + "</div>"
+              + "</div>"+
+              "<td><button type='button' class='btn btn-primary' data-bs-toggle='modal' data-bs-target='#deleteModal-"+a.getId()+"'>Delete</button></td>" +
+              "<div class='modal fade' id='deleteModal-" + a.getId() + "' tabindex='-1' role='dialog' aria-labelledby='deleteModalLabel' aria-hidden='true'>"
+              + "<div class='modal-dialog'>"
+              + "<div class='modal-content'>"
+              + "<div class='modal-header'>"
+              + "<h5 class='modal-title' fs-5 id='promoteModalLabel'>Delete admin?</h5>"
+              + "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Cancel'></button>"
+              + "</div>"
+              + "<div class='modal-body'>"
+              + "<p>Are you sure you want to delete this admin?</p>"
+              + "</div>"
+              + "<div class='modal-footer'>"
+              + "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Cancel</button>"
+              + "<form><button type='submit' class='btn btn-primary' name='delete' value='" + a.getId() + "'>Delete</button></form>"
+              + "</div>"
+              + "</div>"
+              + "</div>"
+              + "</div>"+
+              "</tr>";
+    }
+
+    adminStr += "</table></div>";
+  }
 %>
 
 <html>
@@ -237,14 +247,14 @@
     </div>
   </nav>
   <div class="container">
-    <div class="row"><%=playerStr%></div>
-    <div class="pagination">
-      <%=playerPagination%>
+    <div class="row">
+      <%=playerStr%><br>
+      <div class="pagination"><%=playerPagination%></div>
     </div>
     <br>
-    <div class="row"><%=adminStr%></div>
-    <div class="pagination">
-      <%=adminPagination%>
+    <div class="row">
+      <%=adminStr%>
+      <div class="pagination"><%=adminPagination%></div>
     </div>
   </div>
 </section>
@@ -279,6 +289,13 @@
     background-color: #f1f1f1;
     color: #000;
     margin: 0 4px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 5px #aaaaaa;
+  }
+
+  table{
+    border-radius: 18px;
+    box-shadow: 5px 5px 10px #aaaaaa;
   }
 </style>
 </html>

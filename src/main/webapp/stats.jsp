@@ -12,7 +12,11 @@
     String username = "", leaderboard = "", rank = "";
     int gamesPlayed = 0, gamesWon = 0;
 
-    if (session.getAttribute("id") == null) response.sendRedirect("index.jsp");
+    String redirect = "";
+    if (session.getAttribute("id") == null) redirect = "index.jsp";
+    else if ((int)session.getAttribute("role") == 2) redirect = "admin.jsp";
+    if (redirect != "") response.sendRedirect(redirect);
+
     else{
         EntityManager em = Database.getConnection();
         String sql = "select * from users where id=" + session.getAttribute("id");
@@ -39,6 +43,8 @@
 <head>
     <title>Memory Game - Statistics</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend&display=swap" rel="stylesheet">
     <link href="styles/forms.css" rel="stylesheet">
     <link href="styles/nav.css" rel="stylesheet">
 </head>
@@ -80,17 +86,30 @@
     <div class="container">
         <div class="row justify-content-between" style="margin-top: 5%">
             <div class="col-3" id="userInfo" style="justify-content: center; text-align: center">
-                <div style="width: 80%; justify-content: center; text-align: center">
-                    <img src="images/RANK.png" alt="rank" style="width: 60%; padding-right: 8%">
-                    <img src="images/<%=rank%>.png" alt="Rank" style="width: 30%">
+                <h1>User Information</h1>
+                <div class="card" style="justify-content: center; text-align: center">
+                    <div class="card-body">
+                        <img src="images/RANK.png" alt="rank" style="width: 60%; padding-right: 8%">
+                        <img src="images/<%=rank%>.png" alt="Rank" style="width: 30%">
+                    </div>
                 </div>
-                <h1>Username: <%=username%></h1>
-                <div class="card w-50">
-                    <div class="card-body">Played / Won<br><%=gamesPlayed%> / <%=gamesWon%></div>
+                <div class="card">
+                    <div class="card-body">Games Played / Won<br><span id="playedWon"><%=gamesPlayed%> / <%=gamesWon%></span></div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <span id="fulluname">username: <span id="uname"><%=username%></span></span><br>
+                        <button class="btn btn-primary" style="width: 80%;"><img src="./images/lock.png" alt="lock" style="width: 7%;margin-right: 7%">Change password</button>
+                    </div>
                 </div>
             </div>
             <div class="col-8" id="leaderboard">
-                <%=leaderboard%>
+                <h1>Global Leaderboard</h1>
+                <div class="card">
+                    <div class="card-body">
+                        <%=leaderboard%>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -105,6 +124,31 @@
         font-weight: lighter;
         font-size: 130%;
         color: white;
+    }
+
+    #uname{
+        color: #32C6C2;
+        font-size: 125%;
+        font-weight: lighter;
+    }
+
+    .card{
+        border-radius: 10px;
+        box-shadow: 5px 5px 10px #aaaaaa;
+        margin: auto;
+        margin-bottom: 5%;
+        width: 100%;
+    }
+
+    h1{
+        font-size: 225%;
+        font-weight: normal;
+    }
+
+    #playedWon{
+        font-size: 200%;
+        font-weight: bold;
+        color: #32C6C2;
     }
 </style>
 </html>

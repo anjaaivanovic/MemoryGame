@@ -108,6 +108,11 @@ public class ServerSocket {
     }
 
     private void joinQueue(SocketIOClient client, Integer userId) {
+        if (playerQueue.get(userId) != null){
+            client.sendEvent("queueStatus", "You are already in queue, please close other tabs and try again.");
+            return;
+        }
+
         //reset the socketId
         activePlayers.put(userId, client);
 

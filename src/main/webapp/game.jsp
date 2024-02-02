@@ -1,13 +1,19 @@
 <%@ page import="java.util.UUID" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
-  String gameId = request.getParameter("gameId");
+    String redirect = "";
+    if (session.getAttribute("id") == null) redirect = "index.jsp";
+    else if ((int)session.getAttribute("role") == 2) redirect = "admin.jsp";
+    if (redirect != "") response.sendRedirect(redirect);
+
+    String gameId = request.getParameter("gameId");
 %>
 <html>
 <head>
     <title>Memory Game #<%=gameId%></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Lexend&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="styles/forms.css" rel="stylesheet">
     <link href="styles/nav.css" rel="stylesheet">
 </head>
@@ -41,7 +47,9 @@
                     <div id="chatDiv">
                         <h2>Chat</h2><br>
                         <div id="chat" class="overflow-auto"></div>
-                        <input type="text" placeholder="Write message..." id="chatInput"><button onclick="sendMessage()">Send</button>
+                        <div id="msgInput">
+                            <input type="text" placeholder="Write message..." id="chatInput"><button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -59,16 +67,21 @@
     }
 
     #chatInput{
+        margin-top: 1px;
         padding: 8px;
         width: 75%;
         border-radius: 12px 0px 0px 12px;
+        border: none;
+    }
+
+    #msgInput {
+        margin-top: 12px;
     }
 
     #chatDiv button{
         padding: 8px;
         width: 25%;
         border-radius: 0px 12px 12px 0px;
-
     }
 
     #scores{
@@ -83,6 +96,11 @@
         font-size: 300%;
         font-weight: lighter;
         color: #21807c;
+    }
+
+    .overflow-auto {
+        scrollbar-color: #21807c #85c0bc;
+        scrollbar-width: thin;
     }
 </style>
 </html>

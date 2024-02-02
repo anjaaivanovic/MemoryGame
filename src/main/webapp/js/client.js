@@ -191,6 +191,7 @@ function sendMessage(){
     if (input.value.trim() == "") return;
     let text = "<b>" + sessionStorage.getItem("username") + ":</b> " + input.value;
     input.value = "";
+    input.focus();
     let gameId = sessionStorage.getItem("gameId");
     socket.emit("sendMessage", [gameId, text])
     console.log("Message sent!");
@@ -202,5 +203,9 @@ function appendMessage(msg){
     let msgDiv = document.createElement("div");
     msgDiv.innerHTML = msg;
     container.append(msgDiv);
+    container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+    });
     console.log("Message appended!");
 }

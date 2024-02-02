@@ -13,12 +13,7 @@ body{
     background-color: #21807c;
     border: 1px solid #21807c;
 }
-.btn-primary:active{
-    background-color: #21807c !important;
-    border: 1px solid #21807c !important;
-}
-
-.btn-primary:disabled{
+.btn-primary:active, .btn-primary:disabled, .btn-primary:focus{
     background-color: #21807c !important;
     border: 1px solid #21807c !important;
 }
