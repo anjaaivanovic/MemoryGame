@@ -16,7 +16,7 @@ import java.util.List;
 public class RegisterServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        EntityManager entityManager = Database.getConnection();
+        EntityManager entityManager = Database.getEntityManagerFactory().createEntityManager();
 
         String username = req.getParameter("username");
         String password = req.getParameter("password");

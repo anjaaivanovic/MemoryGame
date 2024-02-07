@@ -18,26 +18,23 @@
     if (redirect != "") response.sendRedirect(redirect);
 
     else{
-        EntityManager em = Database.getConnection();
-        String sql = "select * from users where id=" + session.getAttribute("id");
-        UserEntity user = (UserEntity)em.createNativeQuery(sql, UserEntity.class).getResultList().get(0);
-
-        System.out.println("RANK JE " + user.getRank());
-        username = user.getUsername();
-        if (user.getRank() != null) rank = user.getRank(); else rank = "-";
-        gamesPlayed = user.getGamesPlayed();
-        gamesWon = user.getGamesWon();
-
         ILeaderboardRMI rmi;
 
         try {
             rmi = (ILeaderboardRMI) Naming.lookup("rmi://localhost:1111/LeaderboardRMI");
             leaderboard = rmi.getLeaderboard();
-            System.out.println(rmi);
-            System.out.println(leaderboard);
         } catch (MalformedURLException | RemoteException | NotBoundException e1) {
             e1.printStackTrace();
         }
+
+        EntityManager em = Database.getEntityManagerFactory().createEntityManager();
+        String sql = "select * from users where id=" + session.getAttribute("id");
+        UserEntity user = (UserEntity)em.createNativeQuery(sql, UserEntity.class).getResultList().get(0);
+
+        username = user.getUsername();
+        if (user.getRank() != null) rank = user.getRank(); else rank = "-";
+        gamesPlayed = user.getGamesPlayed();
+        gamesWon = user.getGamesWon();
     }
 %>
 <html>
@@ -100,7 +97,7 @@
                 <div class="card">
                     <div class="card-body">
                         <span id="fulluname">username: <span id="uname"><%=username%></span></span><br>
-                        <button class="btn btn-primary" style="width: 80%;"><img src="./images/lock.png" alt="lock" style="width: 7%;margin-right: 7%">Change password</button>
+<%--                        <button class="btn btn-primary" style="width: 80%;"><img src="./images/lock.png" alt="lock" style="width: 7%;margin-right: 7%">Change password</button>--%>
                     </div>
                 </div>
             </div>

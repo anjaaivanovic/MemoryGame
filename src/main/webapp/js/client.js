@@ -20,7 +20,6 @@ function getSessionData() {
     return fetch('/memoryGame/getSessionData')
         .then(response => response.json())
         .then(data => {
-            console.log('Session data:', data);
             if (data) {
                 return data
             } else {
@@ -66,12 +65,10 @@ async function setup() {
             console.log('Error in setup:', error);
         }
 
-        console.log("First connection");
     } else {
         let socketId = sessionStorage.getItem("socketId");
         socket = io('http://localhost:5678', {query: {socketId: socketId}});
         socket.connect();
-        console.log("Connection reestablished");
     }
 
     if (sessionStorage.getItem("id")) socket.emit("saveId", sessionStorage.getItem("id"));
@@ -110,7 +107,6 @@ function status(status)
 
 //start game
 function startGame(gameId){
-    console.log(gameId);
     sessionStorage.setItem("gameId", gameId);
     window.location.assign("http://localhost:8081/memoryGame/game.jsp?gameId="+gameId);
     //startCountdown(gameId);
@@ -141,10 +137,6 @@ function getBoard() {
 function updateBoard(board, turn, score, otherScore, win)
 {
     let matrix = JSON.parse(board)
-    console.log(matrix)
-    console.log(score)
-    console.log(otherScore)
-    console.log(sessionStorage.getItem("socketId"))
     let gameBoardElement = document.getElementById("gameBoard");
     document.getElementById("score").innerHTML = score;
     document.getElementById("otherScore").innerHTML = otherScore;
@@ -185,7 +177,6 @@ function updateBoard(board, turn, score, otherScore, win)
 }
 
 function playMove(x, y){
-    console.log("played move for " + x + ", " + y);
     let gameId = sessionStorage.getItem('gameId');
     let id = sessionStorage.getItem("id")
     socket.emit("playMove", [gameId, id, x, y]);
@@ -199,11 +190,9 @@ function sendMessage(){
     input.focus();
     let gameId = sessionStorage.getItem("gameId");
     socket.emit("sendMessage", [gameId, text])
-    console.log("Message sent!");
 }
 
 function appendMessage(msg){
-    console.log(msg)
     let container = document.getElementById("chat");
     let msgDiv = document.createElement("div");
     msgDiv.innerHTML = msg;
@@ -212,5 +201,4 @@ function appendMessage(msg){
         top: container.scrollHeight,
         behavior: 'smooth'
     });
-    console.log("Message appended!");
 }

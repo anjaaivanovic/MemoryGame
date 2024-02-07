@@ -4,7 +4,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.mindrot.jbcrypt.BCrypt" %>
 <%
-    EntityManager entityManager = Database.getConnection();
+    EntityManager entityManager = Database.getEntityManagerFactory().createEntityManager();
     String error = "";
     String username = "";
 

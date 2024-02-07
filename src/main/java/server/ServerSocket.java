@@ -10,6 +10,7 @@ import com.corundumstudio.socketio.listener.DisconnectListener;
 import com.example.projekat.Database;
 import engine.GameEngine;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import java.util.*;
 
@@ -21,7 +22,7 @@ public class ServerSocket {
     private HashMap<Integer, SocketIOClient> activePlayers;
     private HashMap<Integer, SocketIOClient> playerQueue;
     private HashMap<UUID, GameEngine> activeGames;
-    private EntityManager database;
+    private EntityManagerFactory factory;
 
     private void configure(){
         config = new Configuration();
@@ -35,7 +36,7 @@ public class ServerSocket {
         activePlayers = new HashMap<>();
         playerQueue = new HashMap<>();
         activeGames = new HashMap<>();
-        database = Database.getConnection();
+        factory = Database.getEntityManagerFactory();
         setConnectListener();
         setDisconnectListener();
         setQueueListener();
@@ -228,6 +229,7 @@ public class ServerSocket {
 
     private void handleWin(GameEngine engine)
     {
+        EntityManager database = factory.createEntityManager();
         System.out.println("Handling win...");
         int winner, loser;
         if (engine.checkWinner() == engine.getPlayer1()){
@@ -238,9 +240,6 @@ public class ServerSocket {
             winner = engine.getPlayer2();
             loser = engine.getPlayer1();
         }
-
-        System.out.println(winner);
-        System.out.println(loser);
         try {
             database.getTransaction().begin();
             String sql = "update users set gamesWon=gamesWon+1 where id=" + winner;
@@ -263,7 +262,6 @@ public class ServerSocket {
 
             @Override
             public void onData(SocketIOClient socketIOClient, Object[] data, AckRequest ackRequest) throws Exception {
-                System.out.println("play move event received!");
                 UUID gameId = UUID.fromString((String) data[0]);
                 Integer userId = Integer.parseInt((String)data[1]);
                 int x = (Integer) data[2];

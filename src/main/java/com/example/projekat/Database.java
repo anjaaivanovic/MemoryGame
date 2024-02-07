@@ -6,10 +6,7 @@ import jakarta.persistence.Persistence;
 
 public class Database {
     static EntityManagerFactory factory = Persistence.createEntityManagerFactory("default");
-    static EntityManager entityManager = null;
-
-    public static EntityManager getConnection(){
-        if (entityManager == null) entityManager = factory.createEntityManager();
-        return entityManager;
+    public static EntityManagerFactory getEntityManagerFactory(){
+        return factory;
     }
 }

@@ -16,8 +16,8 @@ public class LeaderboardRMI extends UnicastRemoteObject implements ILeaderboardR
 
     @Override
     public String getLeaderboard() {
-        EntityManager em = Database.getConnection();
-        String sql = "select * from users where roleId <> 2 order by (CAST(gamesPlayed AS DECIMAL(10, 2)) / NULLIF(CAST(gamesWon AS DECIMAL(10, 2)), 0)) limit 10";
+        EntityManager em = Database.getEntityManagerFactory().createEntityManager();
+        String sql = "select * from users where roleId <> 2 order by (CAST(gamesWon AS DECIMAL(10, 2)) / NULLIF(CAST(gamesPlayed AS DECIMAL(10, 2)), 0)) DESC limit 10";
         List<UserEntity> leaderboard = em.createNativeQuery(sql, UserEntity.class).getResultList();
 
         String leaderboardStr = "<table class='table'>" +
@@ -26,12 +26,24 @@ public class LeaderboardRMI extends UnicastRemoteObject implements ILeaderboardR
                 "<th scope='col'>Place</th>" +
                 "<th scope='col'>Username</th>" +
                 "<th scope='col'>Rank</th>" +
-                "<th scope='col'>Stats</th>" +
+                "<th scope='col'>Games played / won</th>" +
                 "</tr></thead>" +
                 "<tbody>";
 
         int i = 1;
         for (UserEntity u: leaderboard){
+            String rank;
+            float percentage = u.getGamesWon() / (float)u.getGamesPlayed();
+            if (percentage >= 0.9) rank = "S";
+            else if (percentage >= 0.8) rank = "A";
+            else if (percentage >= 0.7) rank ="B";
+            else if (percentage >= 0.6) rank = "C";
+            else if (u.getGamesPlayed() == 0) rank = "-";
+            else rank = "D";
+
+            em.getTransaction().begin();
+            u.setRank(rank);
+            em.getTransaction().commit();
             String urank = "-";
             if (u.getRank() != null) urank = u.getRank();
             leaderboardStr += "<tr>" +

@@ -101,7 +101,7 @@
     }
 
     #chatInput{
-        margin-top: 1px;
+        margin-top: 2px;
         padding: 8px;
         width: 75%;
         border-radius: 12px 0px 0px 12px;

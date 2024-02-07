@@ -45,7 +45,7 @@
   }
   else
   {
-    EntityManager entityManager = Database.getConnection();
+    EntityManager entityManager = Database.getEntityManagerFactory().createEntityManager();
 
     if (request.getParameter("delete") != null){
 
